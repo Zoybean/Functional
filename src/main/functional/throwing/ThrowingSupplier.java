@@ -17,8 +17,24 @@
 
 package functional.throwing;
 
+/**
+ * Represents a fallible supplier of results.
+ * <p>
+ * <p>There is no requirement that a new or distinct result be returned each
+ * time the supplier is invoked.
+ *
+ * @param <T> the type of results supplied by this supplier
+ * @param <E> the type of exceptions thrown by this supplier
+ * @author Zoey Hewll
+ */
 @FunctionalInterface
-public interface ThrowingSupplier<R, E extends Throwable>
+public interface ThrowingSupplier<T, E extends Throwable>
 {
-  R get() throws E;
+    /**
+     * Gets a result.
+     *
+     * @return a result
+     * @throws E if the operation throws an exception
+     */
+    T get() throws E;
 }

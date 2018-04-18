@@ -17,8 +17,42 @@
 
 package functional.throwing;
 
+/**
+ * Represents a fallible operation that accepts no input and returns no result.
+ * Unlike most other functional interfaces, {@code ThrowingRunnable} is expected
+ * to operate via side-effects.
+ *
+ * @param <E> the type of exceptions thrown by the operation
+ * @author Zoey Hewll
+ */
 @FunctionalInterface
 public interface ThrowingRunnable<E extends Throwable>
 {
-  void run() throws E;
+    /**
+     * Perform this operation.
+     *
+     * @throws E it the operation throws an exception
+     */
+    void run() throws E;
+
+    /**
+     * Returns a composed supplier that first performs this operation,
+     * and then returns the value supplied by {@code after}.
+     * If evaluation of either operation throws an exception, it is relayed to
+     * the caller of the composed function.
+     *
+     * @param <R>   the type of output of {@code after}, and of the composed function
+     * @param after the supplier to use after this operation
+     * @return a composed {@code ThrowingSupplier} that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
+     */
+    default <R> ThrowingSupplier<R, E> andThen(ThrowingSupplier<R, E> after)
+    {
+        return () ->
+        {
+            run();
+            return after.get();
+        };
+    }
 }
