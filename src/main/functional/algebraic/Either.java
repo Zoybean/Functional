@@ -23,7 +23,6 @@ import functional.throwing.ThrowingFunction;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * <p>A container which holds a value of one of two types; and provides pattern matching to safely unwrap the data.
@@ -98,36 +97,6 @@ public abstract class Either<L, R>
         unsafeMatch(
                 lf::accept,
                 rf::accept);
-    }
-
-    /**
-     * Match on the contained value, performing the action pertaining to the contained type.
-     *
-     * @param lf The action to perform if the contained value is a {@link Left} value.
-     * @param rf The action to perform if the contained value is a {@link Right} value.
-     */
-    public void match(Runnable lf, Runnable rf)
-    {
-        match(
-                (L l) -> lf.run(),
-                (R r) -> rf.run()
-        );
-    }
-
-    /**
-     * Match on the contained value, performing the operation pertaining to the contained type, and returning the result.
-     * Both operations must return the same type.
-     *
-     * @param lf The operation to perform if the contained value is a {@link Left} value.
-     * @param rf The operation to perform if the contained value is a {@link Right} value.
-     * @return The value returned by the matched operation.
-     */
-    public <T> T match(Supplier<? extends T> lf, Supplier<? extends T> rf)
-    {
-        return match(
-                (L l) -> lf.get(),
-                (R r) -> rf.get()
-        );
     }
 
     /**
