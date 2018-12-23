@@ -155,8 +155,9 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      *
      * @param value the value to wrap
      * @return nothing() if the value is null, and just(value) otherwise
+     * @param <V>
      */
-    public Maybe<V> of(@Nullable V value)
+    public static <V> Maybe<V> of(@Nullable V value)
     {
         return value == null
                 ? nothing()
@@ -168,8 +169,9 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      *
      * @param value the optional to transform
      * @return A Maybe mirroring the Optional parameter
+     * @param <V>
      */
-    public Maybe<V> of(Optional<V> value)
+    public static <V> Maybe<V> of(Optional<V> value)
     {
         return value.map(Maybe::just).orElse(nothing());
     }
