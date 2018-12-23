@@ -269,7 +269,7 @@ public abstract class Either<L, R>
         @Override
         public int hashCode()
         {
-            return Objects.hashCode(value);
+            return Objects.hash(Left.class, value);
         }
 
         @Override
@@ -325,7 +325,7 @@ public abstract class Either<L, R>
         @Override
         public int hashCode()
         {
-            return Objects.hashCode(value);
+            return Objects.hash(Right.class, value);
         }
 
         @Override

@@ -240,7 +240,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         @Override
         public int hashCode()
         {
-            return 0;
+            return Objects.hashCode(Nothing.class);
         }
 
         @Override
@@ -310,7 +310,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         @Override
         public int hashCode()
         {
-            return Objects.hashCode(value);
+            return Objects.hash(Just.class, value);
         }
 
         @Override
