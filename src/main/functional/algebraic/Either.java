@@ -278,7 +278,7 @@ public abstract class Either<L, R>
             if (o instanceof Left)
             {
                 Left l = (Left) o;
-                return value.equals(l.value);
+                return Objects.equals(value, l.value);
             }
             else
             {
@@ -334,7 +334,7 @@ public abstract class Either<L, R>
             if (o instanceof Right)
             {
                 Right r = (Right) o;
-                return value.equals(r.value);
+                return Objects.equals(value, r.value);
             }
             return false;
         }

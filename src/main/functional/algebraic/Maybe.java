@@ -304,7 +304,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
             if (o instanceof Just)
             {
                 Just j = (Just) o;
-                return value.equals(j.value);
+                return Objects.equals(value, j.value);
             }
             return false;
         }
