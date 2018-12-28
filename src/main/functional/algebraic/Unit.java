@@ -55,7 +55,7 @@ public final class Unit
      */
     public static <E> Function<E, Unit> convert(Consumer<E> f)
     {
-        return convertUnsafe(f::accept)::apply;
+        return Unit.<E, RuntimeException>convertUnsafe(f::accept)::apply;
     }
 
     /**
@@ -66,7 +66,7 @@ public final class Unit
      */
     public static Supplier<Unit> convert(Runnable f)
     {
-        return convertUnsafe(f::run)::get;
+        return Unit.<RuntimeException>convertUnsafe(f::run)::get;
     }
 
     /**
