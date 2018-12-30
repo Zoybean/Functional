@@ -226,6 +226,8 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
     @Override
     public abstract int hashCode();
 
+    public abstract String toString();
+
     /**
      * The class representing an absent value.
      *
@@ -243,6 +245,12 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         public int hashCode()
         {
             return Objects.hashCode(Nothing.class);
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Maybe.nothing()";
         }
 
         @Override
@@ -313,6 +321,12 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         public int hashCode()
         {
             return Objects.hash(Just.class, value);
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Maybe.just(" + value + ')';
         }
 
         @Override

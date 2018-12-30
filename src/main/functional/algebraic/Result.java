@@ -465,4 +465,12 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
         return false;
     }
 
+    public String toString()
+    {
+        return match(
+                e -> "Result.error(" + e + ')',
+                v -> "Result.value(" + v + ')'
+        );
+    }
+
 }

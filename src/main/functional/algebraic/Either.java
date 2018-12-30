@@ -48,6 +48,8 @@ public abstract class Either<L, R>
 
     public abstract boolean equals(Object o);
 
+    public abstract String toString();
+
     /**
      * Match on the contained value, applying the function pertaining to the contained type, and returning the result.
      * Both functions must have the same return and throw types.
@@ -287,6 +289,12 @@ public abstract class Either<L, R>
         }
 
         @Override
+        public String toString()
+        {
+            return "Either.left(" + value + ')';
+        }
+
+        @Override
         public <T, E extends Throwable> T unsafeMatch(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E
         {
             return lf.apply(value);
@@ -337,6 +345,12 @@ public abstract class Either<L, R>
                 return Objects.equals(value, r.value);
             }
             return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Either.right(" + value + ')';
         }
 
         @Override
