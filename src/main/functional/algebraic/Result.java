@@ -17,6 +17,7 @@
 
 package functional.algebraic;
 
+import functional.Voids;
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
@@ -89,7 +90,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
 
     /**
      * Perform an operation which may throw a checked exception, and encapsulate the result.
-     * If the operation succeeds, the Result will contain nothing (Unit).
+     * If the operation succeeds, the Result will contain nothing (Void).
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
      * <p>Conceptually the inverse of {@link #get}.
@@ -100,9 +101,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <E> the type of checked exception which may be thrown
      * @return A Result representing the outcome of the operation.
      */
-    public static <E extends Exception> Result<E, Unit> of(ThrowingRunnable<? extends E> v)
+    public static <E extends Exception> Result<E, Void> of(ThrowingRunnable<? extends E> v)
     {
-        return of(Unit.convertUnsafe(v));
+        return of(Voids.convertUnsafe(v));
     }
 
     /**
@@ -132,7 +133,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
 
     /**
      * Perform an operation which may throw a runtime exception, and encapsulate the result.
-     * If the operation succeeds, the Result will contain nothing (Unit).
+     * If the operation succeeds, the Result will contain nothing (Void).
      * If the operation fails, the Result will contain the thrown runtime exception.
      * <p>
      * <p>Conceptually the inverse of {@link #get}.
@@ -142,9 +143,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param v the operation to perform
      * @return A Result representing the outcome of the operation.
      */
-    public static Result<RuntimeException, Unit> ofRuntime(Runnable v)
+    public static Result<RuntimeException, Void> ofRuntime(Runnable v)
     {
-        return ofRuntime(Unit.convert(v));
+        return ofRuntime(Voids.convert(v));
     }
 
     /**
@@ -167,7 +168,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <E> The checked exception type
      * @return The converted operation, which returns a result instead of throwing an exception.
      */
-    public static <E extends Exception> Supplier<Result<E, Unit>> convert(ThrowingRunnable<? extends E> v)
+    public static <E extends Exception> Supplier<Result<E, Void>> convert(ThrowingRunnable<? extends E> v)
     {
         return () -> of(v);
     }
@@ -192,7 +193,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <E> The checked exception type
      * @return The converted function, which returns a result instead of throwing an exception.
      */
-    public static <T, E extends Exception> Function<T, Result<E, Unit>> convert(ThrowingConsumer<? super T, ? extends E> v)
+    public static <T, E extends Exception> Function<T, Result<E, Void>> convert(ThrowingConsumer<? super T, ? extends E> v)
     {
         return (T t) -> of(() -> v.accept(t));
     }
@@ -309,7 +310,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param f
      * @return
      */
-    public Result<E, Unit> bindT(ThrowingConsumer<? super V, ? extends E> f)
+    public Result<E, Void> bindT(ThrowingConsumer<? super V, ? extends E> f)
     {
         return bind(convert(f));
     }
@@ -347,7 +348,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param f
      * @return
      */
-    public Result<E, Unit> thenT(ThrowingRunnable<? extends E> f)
+    public Result<E, Void> thenT(ThrowingRunnable<? extends E> f)
     {
         return then(convert(f));
     }

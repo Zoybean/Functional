@@ -217,7 +217,7 @@ public class ResultTest
     @Test
     public void ofTestRunnableValue()
     {
-        assertEquals(Result.of(() -> {}), Result.value(Unit.unit));
+        assertEquals(Result.of(() -> {}), Result.value(null));
     }
 
     @Test
@@ -243,7 +243,7 @@ public class ResultTest
     @Test
     public void ofRuntimeTestRunnableValue()
     {
-        assertEquals(Result.ofRuntime(() -> {}), Result.value(Unit.unit));
+        assertEquals(Result.ofRuntime(() -> {}), Result.value(null));
     }
 
     @Test
