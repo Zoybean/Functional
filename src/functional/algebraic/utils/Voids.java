@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Zoey Hewll
+ * Copyright 2019 Zoey Hewll
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package functional;
+package functional.algebraic.utils;
 
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;

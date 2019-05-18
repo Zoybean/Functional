@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Zoey Hewll
+ * Copyright 2019 Zoey Hewll
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 package functional.algebraic;
 
-import functional.Voids;
+import functional.algebraic.utils.Voids;
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
@@ -248,7 +248,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <V> The new value type
      * @return An equivalent Either with more generic type parameters.
      */
-    private static <E extends Exception, V> Result<E, V> cast(Result<? extends E, ? extends V> r)
+    static <E extends Exception, V> Result<E, V> cast(Result<? extends E, ? extends V> r)
     {
         return r.match(
                 (E e) -> error(e),

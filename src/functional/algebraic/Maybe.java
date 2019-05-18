@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Zoey Hewll
+ * Copyright 2019 Zoey Hewll
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -212,7 +212,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <V> The type to cast from
      * @return A Maybe of the upcast type
      */
-    private static <T, V extends T> Maybe<T> cast(Maybe<V> m)
+    static <T, V extends T> Maybe<T> cast(Maybe<V> m)
     {
         return m.match(
                 (T value) -> just(value),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Zoey Hewll
+ * Copyright 2019 Zoey Hewll
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -237,7 +237,7 @@ public abstract class Either<L, R>
      * @param <R>    The new Right type
      * @return An equivalent Either with more generic type parameters.
      */
-    private static <L, R> Either<L, R> cast(Either<? extends L, ? extends R> either)
+    static <L, R> Either<L, R> cast(Either<? extends L, ? extends R> either)
     {
         return either.match(
                 (L l) -> left(l),
