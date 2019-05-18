@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static functional.algebraic.Maybe.*;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class MaybeTest
@@ -262,5 +263,13 @@ public class MaybeTest
         assertNotEquals(just(0), nothing());
         assertNotEquals(nothing(), just(0));
         assertNotEquals(just(0), just(1));
+    }
+
+    @Test
+    public void toStringTest()
+    {
+        String value = "hello";
+        assertThat(Maybe.just(value).toString(), containsString(value.toString()));
+        Maybe.nothing().toString(); //ensure no exception is thrown
     }
 }

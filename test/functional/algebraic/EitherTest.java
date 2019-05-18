@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static functional.algebraic.Either.left;
 import static functional.algebraic.Either.right;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class EitherTest
@@ -273,5 +274,13 @@ public class EitherTest
         ThrowingFunction<Object, ?, IOException> left = l -> { throw new AssertionFailedError("Wrong branch taken"); };
         ThrowingFunction<Integer, ?, IOException> right = r -> { throw new IOException("This is the right path"); };
         right(0).unsafeMatch(left, right);
+    }
+
+    @Test
+    public void toStringTest()
+    {
+        String value = "hello";
+        assertThat(Either.right(value).toString(), containsString(value.toString()));
+        assertThat(Either.left(value).toString(), containsString(value.toString()));
     }
 }

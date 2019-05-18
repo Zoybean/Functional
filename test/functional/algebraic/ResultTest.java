@@ -17,6 +17,7 @@
 
 package functional.algebraic;
 
+import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
@@ -27,9 +28,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class ResultTest
 {
@@ -96,110 +97,247 @@ public class ResultTest
     }
 
     @Test
+    public void bindTTestValue()
+    {
+        assertEquals(
+                Result.value(true),
+                Result.value(true).bindT(v -> v));
+    }
+
+    @Test
+    public void bindTTestErrorValue()
+    {
+        Exception e = new Exception();
+        assertEquals(
+                Result.error(e),
+                Result.error(e).bindT(v -> v));
+    }
+
+    @Test
+    public void bindTTestValueError()
+    {
+        Exception e = new Exception();
+        assertEquals(
+                Result.error(e),
+                Result.value(true).bindT((ThrowingConsumer<Boolean, Exception>) v -> {throw e;}));
+    }
+
+    @Test
     public void thenTestValueValue()
     {
-        assertEquals(Result.value(false).then(() -> Result.value(true)), Result.value(true));
+        assertEquals(
+                Result.value(true),
+                Result.value(false).then(() -> Result.value(true)));
     }
 
     @Test
     public void thenTestValueError()
     {
         IOException e = new IOException();
-        assertEquals(Result.value(false).then(() -> Result.error(e)), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.value(false).then(() -> Result.error(e)));
     }
 
     @Test
     public void thenTestErrorValue()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).then(() -> Result.value(true)), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).then(() -> Result.value(true)));
     }
 
     @Test
     public void thenTestErrorError()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).then(() -> Result.error(new IOException())), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).then(() -> Result.error(new IOException())));
     }
+
+    @Test
+    public void thenTTestValueVoid()
+    {
+        assertEquals(
+                Result.value(null),
+                Result.value(false).thenT(() -> {}));
+    }
+
+    @Test
+    public void thenTTestValueValue()
+    {
+        assertEquals(
+                Result.value(true),
+                Result.value(false).thenT(() -> true));
+    }
+
+    @Test
+    public void thenTTestValueError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.value(false).thenT(() -> {throw e;}));
+    }
+
+    @Test
+    public void thenTTestErrorValue()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.error(e).thenT(() -> true));
+    }
+
+    @Test
+    public void thenTTestErrorError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.error(e).thenT(() -> {throw new IOException();}));
+    }
+
 
     @Test
     public void peekTestValueValue()
     {
-        assertEquals(Result.value(false).peek(b -> Result.value(!b)), Result.value(false));
+        assertEquals(
+                Result.value(false),
+                Result.value(false).peek(b -> Result.value(!b)));
     }
 
     @Test
     public void peekTestValueError()
     {
         IOException e = new IOException();
-        assertEquals(Result.value(false).peek(b -> Result.error(e)), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.value(false).peek(b -> Result.error(e)));
     }
 
     @Test
     public void peekTestErrorValue()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).peek(o -> Result.value(o)), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).peek(o -> Result.value(o)));
     }
 
     @Test
     public void peekTestErrorError()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).peek(o -> Result.error(new FileNotFoundException())), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).peek(o -> Result.error(new FileNotFoundException())));
     }
+
+    public void peekTTestValueValue()
+    {
+        assertEquals(
+                Result.value(false),
+                Result.value(false).peekT(b -> 3));
+    }
+
+    @Test
+    public void peekTTestValueError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.value(false).peekT((ThrowingConsumer<Boolean, Exception>) b -> {throw e;}));
+    }
+
+    @Test
+    public void peekTTestErrorValue()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.error(e).peekT(o -> o));
+    }
+
+    @Test
+    public void peekTTestErrorError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.error(e).peekT((ThrowingConsumer<Object, IOException>) o -> {throw new FileNotFoundException();}));
+    }
+
 
     @Test
     public void setTestValueValue()
     {
-        assertEquals(Result.value(false).set(Result.value(true)), Result.value(true));
+        assertEquals(
+                Result.value(true),
+                Result.value(false).set(Result.value(true)));
     }
 
     @Test
     public void setTestValueError()
     {
         IOException e = new IOException();
-        assertEquals(Result.value(false).set(Result.error(e)), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.value(false).set(Result.error(e)));
     }
 
     @Test
     public void setTestErrorValue()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).set(Result.value(true)), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).set(Result.value(true)));
     }
 
     @Test
     public void setTestErrorError()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).set(Result.error(new FileNotFoundException())), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).set(Result.error(new FileNotFoundException())));
     }
 
     @Test
     public void setVTestValue()
     {
-        assertEquals(Result.value(false).setV(true), Result.value(true));
+        assertEquals(
+                Result.value(true),
+                Result.value(false).setV(true));
     }
 
     @Test
     public void setVTestError()
     {
         IOException e = new IOException();
-        assertEquals(Result.error(e).setV(true), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.error(e).setV(true));
     }
 
     @Test
     public void mapTestValue()
     {
-        assertEquals(Result.value(true).map(t -> !t), Result.value(false));
+        assertEquals(
+                Result.value(false),
+                Result.value(true).map(t -> !t));
     }
 
     @Test
     public void mapTestError()
     {
         IOException e = new IOException();
-        assertEquals(Result.<IOException, Boolean>error(e).map(t -> !t), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.<IOException, Boolean>error(e).map(t -> !t));
     }
 
     @Test
@@ -217,27 +355,44 @@ public class ResultTest
     @Test
     public void ofTestRunnableValue()
     {
-        assertEquals(Result.of(() -> {}), Result.value(null));
+        assertEquals(
+                Result.value(null),
+                Result.of(() -> {}));
     }
 
     @Test
     public void ofTestRunnableError()
     {
         IOException e = new IOException();
-        assertEquals(Result.of((ThrowingRunnable<IOException>) () -> {throw e;}), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.of((ThrowingRunnable<IOException>) () -> {throw e;}));
     }
 
     @Test
     public void ofTestSupplierValue()
     {
-        assertEquals(Result.of(() -> true), Result.value(true));
+        assertEquals(
+                Result.value(true),
+                Result.of(() -> true));
     }
 
     @Test
     public void ofTestSupplierError()
     {
         IOException e = new IOException();
-        assertEquals(Result.of((ThrowingSupplier<?, IOException>) () -> {throw e;}), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.of((ThrowingSupplier<?, IOException>) () -> {throw e;}));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void ofTestSupplierRuntime()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.of((ThrowingSupplier<?, IOException>) () -> {throw new RuntimeException();}));
     }
 
     @Test
@@ -250,27 +405,35 @@ public class ResultTest
     public void ofRuntimeTestRunnableError()
     {
         RuntimeException e = new IllegalArgumentException();
-        assertEquals(Result.ofRuntime((Runnable) () -> {throw e;}), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.ofRuntime((Runnable) () -> {throw e;}));
     }
 
     @Test
     public void ofRuntimeTestSupplierValue()
     {
-        assertEquals(Result.ofRuntime(() -> true), Result.value(true));
+        assertEquals(
+                Result.value(true),
+                Result.ofRuntime(() -> true));
     }
 
     @Test
     public void ofRuntimeTestSupplierError()
     {
         RuntimeException e = new IllegalArgumentException();
-        assertEquals(Result.ofRuntime((Supplier<?>) () -> {throw e;}), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.ofRuntime((Supplier<?>) () -> {throw e;}));
     }
 
     @Test
     public void convertTestValue()
     {
         ThrowingFunction<Boolean,Boolean, IOException> f = t -> t;
-        assertEquals(Result.convert(f).apply(true), Result.value(true));
+        assertEquals(
+                Result.value(true),
+                Result.convert(f).apply(true));
     }
 
     @Test
@@ -278,7 +441,9 @@ public class ResultTest
     {
         IOException e = new IOException();
         ThrowingFunction<Boolean,?, IOException> f = t -> {throw e;};
-        assertEquals(Result.convert(f).apply(true), Result.error(e));
+        assertEquals(
+                Result.error(e),
+                Result.convert(f).apply(true));
     }
 
     @Test
@@ -315,8 +480,36 @@ public class ResultTest
         assertEquals(Result.value(true), Result.value(true));
         assertNotEquals(Result.value(true), Result.value(false));
         assertNotEquals(Result.value(true), Result.error(e));
+
         assertEquals(Result.error(e), Result.error(e));
         assertNotEquals(Result.error(new IOException()), Result.error(new IOException()));
         assertNotEquals(Result.error(new IOException()), Result.error(new FileNotFoundException()));
+
+        assertNotEquals(Result.value(true), Either.right(true));
+    }
+    @Test
+    public void hashCodeTest()
+    {
+        IOException e = new IOException();
+
+        assertEquals(Result.value(true).hashCode(), Result.value(true).hashCode());
+        assertNotEquals(Result.value(true).hashCode(), Result.value(false).hashCode());
+        assertNotEquals(Result.value(true).hashCode(), Result.error(e).hashCode());
+
+        assertEquals(Result.error(e).hashCode(), Result.error(e).hashCode());
+        assertNotEquals(Result.error(new IOException()).hashCode(), Result.error(new IOException()).hashCode());
+        assertNotEquals(Result.error(new IOException()).hashCode(), Result.error(new FileNotFoundException()).hashCode());
+
+        assertNotEquals(Result.value(true).hashCode(), Either.right(true).hashCode());
+    }
+
+
+    @Test
+    public void toStringTest()
+    {
+        Double value = 2.0;
+        Exception e = new Exception("message");
+        assertThat(Result.error(e).toString(), containsString(e.toString()));
+        assertThat(Result.value(value).toString(), containsString(value.toString()));
     }
 }

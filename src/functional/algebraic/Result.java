@@ -23,6 +23,7 @@ import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -250,10 +251,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     static <E extends Exception, V> Result<E, V> cast(Result<? extends E, ? extends V> r)
     {
-        return r.match(
-                (E e) -> error(e),
-                (V v) -> value(v)
-        );
+        return new Result<>(Either.cast(r.either));
     }
 
     /**
@@ -451,7 +449,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     @Override
     public int hashCode()
     {
-        return either.hashCode();
+        return Objects.hash(Result.class, either.hashCode());
     }
 
     @Override
