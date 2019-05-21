@@ -17,7 +17,7 @@
 
 package functional.algebraic;
 
-import com.sun.istack.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
