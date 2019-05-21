@@ -58,13 +58,13 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Perform an operation which may throw a checked exception, and encapsulate the result.<br/>
-     * If the operation succeeds, the Result will contain the returned value.<br/>
+     * Perform an operation which may throw a checked exception, and encapsulate the result.<br>
+     * If the operation succeeds, the Result will contain the returned value.<br>
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
      * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> of(r::get)}<br/>
-     * {@code f.get() <==> of(f).get()}<br/>
+     * {@code r <==> of(r::get)}<br>
+     * {@code f.get() <==> of(f).get()}<br>
      *
      * @param v   the operation to perform
      * @param <E> the type of checked exception which may be thrown
@@ -95,8 +95,8 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
      * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> of(r::get)}<br/>
-     * {@code f.run() <~~> of(f).get()}<br/>
+     * {@code r <==> of(r::get)}<br>
+     * {@code f.run() <~~> of(f).get()}<br>
      *
      * @param v   the operation to perform
      * @param <E> the type of checked exception which may be thrown
@@ -113,8 +113,8 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * If the operation fails, the Result will contain the thrown runtime exception.
      * <p>
      * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> ofRuntime(r.get())}<br/>
-     * {@code f.get() <==> ofRuntime(f).get()}<br/>
+     * {@code r <==> ofRuntime(r.get())}<br>
+     * {@code f.get() <==> ofRuntime(f).get()}<br>
      *
      * @param v   the operation to perform
      * @param <V> the type of value which may be returned
@@ -138,8 +138,8 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * If the operation fails, the Result will contain the thrown runtime exception.
      * <p>
      * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> ofRuntime(r.get())}<br/>
-     * {@code f() <==> ofRuntime(f).get()}<br/>
+     * {@code r <==> ofRuntime(r.get())}<br>
+     * {@code f() <==> ofRuntime(f).get()}<br>
      *
      * @param v the operation to perform
      * @return A Result representing the outcome of the operation.
@@ -178,8 +178,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * Convert a function that may throw a checked exception into a function that returns a result.
      *
      * @param v   The function to convert
-     * @param <E> The checked exception type
+     * @param <T> The function's parameter type
      * @param <V> The function's return type
+     * @param <E> The checked exception type
      * @return The converted function, which returns a result instead of throwing an exception.
      */
     public static <T, E extends Exception, V> Function<T, Result<E, V>> convert(ThrowingFunction<? super T, ? extends V, ? extends E> v)
@@ -191,6 +192,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * Convert an operation that may throw a checked exception into a function that returns a result.
      *
      * @param v   The operation to convert
+     * @param <T> The consumer's parameter type
      * @param <E> The checked exception type
      * @return The converted function, which returns a result instead of throwing an exception.
      */
@@ -200,7 +202,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Converts a nested Result (aka Result of a Result) into a single Result
+     * Converts a nested Result (aka Result of a Result) into a single Result.
      *
      * @param r   The result to join
      * @param <E> the error alternative type.
@@ -280,10 +282,11 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Equivalent to haskell's Monadic bind {@code (this >>=)}
+     * Equivalent to haskell's Monadic bind {@code (this >>=)}.
      *
-     * @param f
-     * @return
+     * @param f the function to bind
+     * @param <T> The function's return type
+     * @return the result of the bound computation
      */
     public <T> Result<E, T> bind(Function<? super V, ? extends Result<? extends E, ? extends T>> f)
     {
@@ -293,9 +296,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     /**
      * Equivalent to haskell's Monadic bind {@code (this >>=)}, applied to a throwing function.
      *
-     * @param f
-     * @param <T>
-     * @return
+     * @param f the throwing function to bind
+     * @param <T> The function's return type
+     * @return the result of the bound computation
      */
     public <T> Result<E, T> bindT(ThrowingFunction<? super V, ? extends T, ? extends E> f)
     {
@@ -314,10 +317,11 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Equivalent to haskell {@code (this *>)}
+     * Equivalent to haskell {@code (this *>)}.
      *
      * @param f
      * @return
+     * @param <T> The supplier's return type
      */
     public <T> Result<E, T> then(Supplier<? extends Result<? extends E, ? extends T>> f)
     {
@@ -327,10 +331,11 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Equivalent to haskell {@code (this *>)}
+     * Equivalent to haskell {@code (this *>)}.
      *
      * @param f
      * @return
+     * @param <T> The supplier's return type
      */
     public <T> Result<E, T> thenT(ThrowingSupplier<? extends T, ? extends E> f)
     {
@@ -380,7 +385,10 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * @param f
+     * Apply the given consumer to the contained value and discard the returned value,
+     * returning {@code this} if there was no error, otherwise the resulting error.
+
+     * @param f the consumer to apply
      * @return
      */
     public Result<E, V> peekT(ThrowingConsumer<? super V, ? extends E> f)
@@ -393,6 +401,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      *
      * @param value
      * @return
+     * @param <T> The result's value type
      */
     public <T> Result<E, T> set(Result<? extends E, ? extends T> value)
     {
@@ -406,6 +415,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      *
      * @param value
      * @return
+     * @param <T> The value type
      */
     public <T> Result<E, T> setV(T value)
     {
@@ -428,12 +438,12 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * If the result is a value, return it.<br/>
-     * If it is an exception, throw it.<br/>
+     * If the result is a value, return it.<br>
+     * If it is an exception, throw it.<br>
      *
      * <p>Conceptually the inverse of {@link #of} and {@link #ofRuntime}.
-     * {@code r <==> of(r.get())}<br/>
-     * {@code f() <==> of(f()).get()}<br/>
+     * {@code r <==> of(r.get())}<br>
+     * {@code f() <==> of(f()).get()}<br>
      *
      * @return the contained value
      * @throws E the contained exception

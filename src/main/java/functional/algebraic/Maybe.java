@@ -31,8 +31,34 @@ import java.util.function.Supplier;
 
 /**
  * <p>A container which may be empty, or hold a value; and provides pattern matching to safely unwrap the data.
- * <p>
- * <p>The type is sealed with a private constructor to ensure the only subclasses are {@link Nothing} and {@link Just}.
+ * <br>
+ * <p>The only possible subclasses are {@link Nothing} and {@link Just}.
+ * <h3>Examples:</h3>
+ * In each example, an underscore (_) represents a placeholder for any valid value, where the specific value doesn't affect the output.
+ * <pre> {@code
+ * f(x) = y
+ * g(x) = just(y);
+ * h(x) = nothing();
+ *
+ * just(x).map(f) == just(y)
+ * just(x).map(g) == just(just(y))
+ * just(x).bind(g) == just(y)
+ *
+ * just(x).map(h) == just(nothing())
+ * just(x).bind(h) == nothing()
+ * }
+ *
+ * Nothing always yields Nothing:
+ * {@code
+ * nothing().map(_) == nothing()
+ * nothing().bind(_) == nothing()
+ * }
+ *
+ * Matching safely unwraps the data and applies the matched operation:
+ * {@code
+ * just(x).match(x -> y, _) == y
+ * nothing().match(_, () -> z) == z
+ * } </pre>
  *
  * @param <V> The type of the optional value
  * @author Zoey Hewll
@@ -50,27 +76,36 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
     private Maybe() {}
 
     /**
-     * Perform pattern matching on the potential states of the container.
+     * Decide control flow based on the structure of the Maybe,
+     * returning a result or throwing a checked exception.
+     *
+     * @see #match
      *
      * @param some the operation to perform on the contained value if there is one
      * @param none the operation to perform if there is no contained value
      * @param <T>  the type of the value returned by the supplied operations
+     * @param <E>  the exception type which may be thrown by one or both operations
      * @return the result of the matched operation
      * @throws E the exception thrown by the supplied operations
      */
     public abstract <T, E extends Exception> T unsafeMatch(ThrowingFunction<? super V, ? extends T, ? extends E> some, ThrowingSupplier<? extends T, ? extends E> none) throws E;
 
     /**
-     * Perform pattern matching on the potential states of the container.
+     * Decide control flow based on the structure of the Maybe,
+     * optionally throwing a checked exception.
+     *
+     * @see #match
      *
      * @param some the operation to perform on the contained value if there is one
      * @param none the operation to perform if there is no contained value
+     * @param <E>  the exception type which may be thrown by one or both operations
      * @throws E the exception thrown by the supplied operations
      */
     public abstract <E extends Exception> void unsafeMatch(ThrowingConsumer<? super V, ? extends E> some, ThrowingRunnable<? extends E> none) throws E;
 
     /**
-     * Perform pattern matching on the potential states of the container.
+     * Decide control flow by opening the structure of the Maybe,
+     * returning the result of the chosen branch.
      *
      * @param some the operation to perform on the contained value if there is one
      * @param none the operation to perform if there is no contained value
@@ -85,7 +120,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
     }
 
     /**
-     * Perform pattern matching on the potential states of the container.
+     * Decide control flow based on the structure of the Maybe.
      *
      * @param some the operation to perform on the contained value if there is one
      * @param none the operation to perform if there is no contained value
@@ -98,7 +133,8 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
     }
 
     /**
-     * Performs the operation on any contained value and returns a Maybe of the result.
+     * Applies the mapping function if there is a contained value, returning the result in a Maybe.
+     * This is guaranteed to produce a Maybe of the same structure.
      *
      * @param f   the function to apply to the contained value
      * @param <T> the type of the function's return value
@@ -108,6 +144,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
 
     /**
      * Performs the operation on any contained value and returns the resulting Maybe if there is one.
+     * This can produce a Maybe of a different structure.
      *
      * @param f   the function to apply to the contained value
      * @param <T> the type of the function's optional return value
@@ -155,7 +192,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      *
      * @param value the value to wrap
      * @return nothing() if the value is null, and just(value) otherwise
-     * @param <V>
+     * @param <V> The type of the optional value
      */
     public static <V> Maybe<V> of(@Nullable V value)
     {
@@ -169,7 +206,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      *
      * @param value the optional to transform
      * @return A Maybe mirroring the Optional parameter
-     * @param <V>
+     * @param <V> The type of the optional value
      */
     public static <V> Maybe<V> of(Optional<V> value)
     {

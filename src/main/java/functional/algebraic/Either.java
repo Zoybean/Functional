@@ -57,18 +57,20 @@ public abstract class Either<L, R>
      * @param lf  The function to apply to the contained value if it is a {@link Left} value.
      * @param rf  The function to apply to the contained value if it is a {@link Right} value.
      * @param <T> The return type of the functions.
+     * @param <E> The type of the error thrown by the functions.
      * @return The value returned by the matched function.
      * @throws E The error thrown by the functions.
      */
     public abstract <T, E extends Throwable> T unsafeMatch(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E;
 
     /**
-     * Match on the contained value, applying the function pertaining to the contained type, and returning the result.
-     * Both functions must return and throw the same types.
+     * Match on the contained value, performing the operation pertaining to the contained type.
+     * Both operation must throw the same types.
      *
-     * @param lf The function to apply to the contained value if it is a {@link Left} value.
-     * @param rf The function to apply to the contained value if it is a {@link Right} value.
-     * @throws E The error thrown by the functions.
+     * @param lf The operation to perform on the contained value if it is a {@link Left} value.
+     * @param rf The operation to perform on the contained value if it is a {@link Right} value.
+     * @param <E> The type of the error thrown by the operation.
+     * @throws E The error thrown by the operation.
      */
     public abstract <E extends Throwable> void unsafeMatch(ThrowingConsumer<? super L, ? extends E> lf, ThrowingConsumer<? super R, ? extends E> rf) throws E;
 
