@@ -22,6 +22,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <name>io.github.zoybean:functional</name>
     <description>A library of utilities to enable functional programming in Java</description>
+    <url>https://github.com/Zoybean/Functional/</url>
 
     <licenses>
         <license>
