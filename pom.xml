@@ -40,8 +40,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/Zoybean/Functional.git</connection>
-        <developerConnection>scm:git:ssh://github.com/Zoybean/Functional.git</developerConnection>
+        <connection>scm:git:https://Zoybean@github.com/Zoybean/Functional.git</connection>
+        <developerConnection>scm:git:https://Zoybean@github.com/Zoybean/Functional.git</developerConnection>
         <url>https://github.com/Zoybean/Functional/tree/master</url>
     </scm>
 
