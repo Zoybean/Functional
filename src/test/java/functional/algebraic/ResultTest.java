@@ -75,7 +75,7 @@ public class ResultTest
     {
         assertEquals(
                 Result.value(true),
-                Result.value(true).bind(Result::value));
+                Result.value(true).andThen(Result::value));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ResultTest
         Exception e = new Exception();
         assertEquals(
                 Result.error(e),
-                Result.error(e).bind(Result::value));
+                Result.error(e).andThen(Result::value));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class ResultTest
         Exception e = new Exception();
         assertEquals(
                 Result.error(e),
-                Result.value(true).bind(v -> Result.error(e)));
+                Result.value(true).andThen(v -> Result.error(e)));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class ResultTest
     {
         assertEquals(
                 Result.value(true),
-                Result.value(true).bindT(v -> v));
+                Result.value(true).andThenT(v -> v));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class ResultTest
         Exception e = new Exception();
         assertEquals(
                 Result.error(e),
-                Result.error(e).bindT(v -> v));
+                Result.error(e).andThenT(v -> v));
     }
 
     @Test
@@ -119,8 +119,79 @@ public class ResultTest
         Exception e = new Exception();
         assertEquals(
                 Result.error(e),
-                Result.value(true).bindT((ThrowingConsumer<Boolean, Exception>) v -> {throw e;}));
+                Result.value(true).andThenT((ThrowingConsumer<Boolean, Exception>) v -> {throw e;}));
     }
+
+    @Test
+    public void orTestValueValue()
+    {
+        assertEquals(
+                Result.value(false),
+                Result.value(false).or(() -> Result.value(true)));
+    }
+
+    @Test
+    public void orTestValueError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.value(false),
+                Result.value(false).or(() -> Result.error(e)));
+    }
+
+    @Test
+    public void orTestErrorValue()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.value(true),
+                Result.error(e).or(() -> Result.value(true)));
+    }
+
+    @Test
+    public void orTestErrorError()
+    {
+        IOException e = new IOException("a");
+        assertEquals(
+                Result.error(e),
+                Result.error(new IOException("b")).or(() -> Result.error(e)));
+    }
+
+    @Test
+    public void orTTestValueValue()
+    {
+        assertEquals(
+                Result.value(false),
+                Result.value(false).orT(() -> true));
+    }
+
+    @Test
+    public void orTTestValueError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.value(false),
+                Result.value(false).orT(() -> {throw e;}));
+    }
+
+    @Test
+    public void orTTestErrorValue()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.value(true),
+                Result.error(e).orT(() -> true));
+    }
+
+    @Test
+    public void orTTestErrorError()
+    {
+        IOException e = new IOException("a");
+        assertEquals(
+                Result.error(e),
+                Result.error(new IOException("b")).orT(() -> {throw e;}));
+    }
+
 
     @Test
     public void andTestValueValue()
@@ -194,10 +265,10 @@ public class ResultTest
     @Test
     public void andTTestErrorError()
     {
-        IOException e = new IOException();
+        IOException e = new IOException("a");
         assertEquals(
                 Result.error(e),
-                Result.error(e).andT(() -> {throw new IOException();}));
+                Result.error(e).andT(() -> {throw new IOException("b");}));
     }
 
 

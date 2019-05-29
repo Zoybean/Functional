@@ -289,7 +289,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <T> The function's return type
      * @return the result of the bound computation
      */
-    public <T> Result<E, T> bind(Function<? super V, ? extends Result<? extends E, ? extends T>> f)
+    public <T> Result<E, T> andThen(Function<? super V, ? extends Result<? extends E, ? extends T>> f)
     {
         return join(map(f));
     }
@@ -301,9 +301,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <T> The function's return type
      * @return the result of the bound computation
      */
-    public <T> Result<E, T> bindT(ThrowingFunction<? super V, ? extends T, ? extends E> f)
+    public <T> Result<E, T> andThenT(ThrowingFunction<? super V, ? extends T, ? extends E> f)
     {
-        return bind(convert(f));
+        return andThen(convert(f));
     }
 
     /**
@@ -312,9 +312,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param f
      * @return
      */
-    public Result<E, Void> bindT(ThrowingConsumer<? super V, ? extends E> f)
+    public Result<E, Void> andThenT(ThrowingConsumer<? super V, ? extends E> f)
     {
-        return bind(convert(f));
+        return andThen(convert(f));
     }
 
     /**
@@ -326,7 +326,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public <T> Result<E, T> and(Supplier<? extends Result<? extends E, ? extends T>> f)
     {
-        return bind((__) -> f.get());
+        return andThen((__) -> f.get());
     }
 
     /**
@@ -356,6 +356,34 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
+     * Equivalent to haskell {@code (this <*)}.
+     *
+     * @param r
+     * @return
+     * @param <F> The supplier's error type
+     */
+    public <F extends Exception> Result<F, V> or(Supplier<? extends Result<? extends F, ? extends V>> r)
+    {
+        return match(
+                (E e) -> cast(r.get()),
+                (V v) -> value(v)
+        );
+    }
+
+    /**
+     * Equivalent to haskell {@code (this <*)}.
+     *
+     * @param f
+     * @return
+     * @param <F> The supplier's error type
+     */
+    public <F extends Exception> Result<F, V> orT(ThrowingSupplier<? extends V, ? extends F> f)
+    {
+        return or(convert(f));
+    }
+
+
+    /**
      * Apply the given function to the contained value and discard the Result's value,
      * returning {@code this} if there was no error, otherwise the resulting error.
      * <p>
@@ -366,7 +394,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public Result<E, V> peek(Function<? super V, ? extends Result<? extends E, ?>> f)
     {
-        return bind((V v) -> f.apply(v).set(v));
+        return andThen((V v) -> f.apply(v).set(v));
     }
 
     /**
@@ -440,8 +468,8 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public <U,R> Result<E, R> bimap(Result<E, U> r, BiFunction<? super V, ? super U, ? extends R> f)
     {
-        return bind(
-                (V v) -> r.bind(
+        return andThen(
+                (V v) -> r.andThen(
                         (U u) -> value(
                                 f.apply(v, u))));
     }
