@@ -123,81 +123,81 @@ public class ResultTest
     }
 
     @Test
-    public void thenTestValueValue()
+    public void andTestValueValue()
     {
         assertEquals(
                 Result.value(true),
-                Result.value(false).then(() -> Result.value(true)));
+                Result.value(false).and(() -> Result.value(true)));
     }
 
     @Test
-    public void thenTestValueError()
+    public void andTestValueError()
     {
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.value(false).then(() -> Result.error(e)));
+                Result.value(false).and(() -> Result.error(e)));
     }
 
     @Test
-    public void thenTestErrorValue()
+    public void andTestErrorValue()
     {
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).then(() -> Result.value(true)));
+                Result.error(e).and(() -> Result.value(true)));
     }
 
     @Test
-    public void thenTestErrorError()
+    public void andTestErrorError()
     {
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).then(() -> Result.error(new IOException())));
+                Result.error(e).and(() -> Result.error(new IOException())));
     }
 
     @Test
-    public void thenTTestValueVoid()
+    public void andTTestValueVoid()
     {
         assertEquals(
                 Result.value(null),
-                Result.value(false).thenT(() -> {}));
+                Result.value(false).andT(() -> {}));
     }
 
     @Test
-    public void thenTTestValueValue()
+    public void andTTestValueValue()
     {
         assertEquals(
                 Result.value(true),
-                Result.value(false).thenT(() -> true));
+                Result.value(false).andT(() -> true));
     }
 
     @Test
-    public void thenTTestValueError()
+    public void andTTestValueError()
     {
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.value(false).thenT(() -> {throw e;}));
+                Result.value(false).andT(() -> {throw e;}));
     }
 
     @Test
-    public void thenTTestErrorValue()
+    public void andTTestErrorValue()
     {
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).thenT(() -> true));
+                Result.error(e).andT(() -> true));
     }
 
     @Test
-    public void thenTTestErrorError()
+    public void andTTestErrorError()
     {
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).thenT(() -> {throw new IOException();}));
+                Result.error(e).andT(() -> {throw new IOException();}));
     }
 
 
@@ -276,7 +276,7 @@ public class ResultTest
     {
         assertEquals(
                 Result.value(true),
-                Result.value(false).set(Result.value(true)));
+                Result.value(false).and(Result.value(true)));
     }
 
     @Test
@@ -285,7 +285,7 @@ public class ResultTest
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.value(false).set(Result.error(e)));
+                Result.value(false).and(Result.error(e)));
     }
 
     @Test
@@ -294,7 +294,7 @@ public class ResultTest
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).set(Result.value(true)));
+                Result.error(e).and(Result.value(true)));
     }
 
     @Test
@@ -303,7 +303,7 @@ public class ResultTest
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).set(Result.error(new FileNotFoundException())));
+                Result.error(e).and(Result.error(new FileNotFoundException())));
     }
 
     @Test
@@ -311,7 +311,7 @@ public class ResultTest
     {
         assertEquals(
                 Result.value(true),
-                Result.value(false).setV(true));
+                Result.value(false).set(true));
     }
 
     @Test
@@ -320,7 +320,7 @@ public class ResultTest
         IOException e = new IOException();
         assertEquals(
                 Result.error(e),
-                Result.error(e).setV(true));
+                Result.error(e).set(true));
     }
 
     @Test

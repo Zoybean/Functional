@@ -324,11 +324,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @return
      * @param <T> The supplier's return type
      */
-    public <T> Result<E, T> then(Supplier<? extends Result<? extends E, ? extends T>> f)
+    public <T> Result<E, T> and(Supplier<? extends Result<? extends E, ? extends T>> f)
     {
-        Function<V, Result<? extends E, ? extends T>> ff =
-                (__) -> f.get();
-        return bind(ff);
+        return bind((__) -> f.get());
     }
 
     /**
@@ -338,9 +336,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @return
      * @param <T> The supplier's return type
      */
-    public <T> Result<E, T> thenT(ThrowingSupplier<? extends T, ? extends E> f)
+    public <T> Result<E, T> andT(ThrowingSupplier<? extends T, ? extends E> f)
     {
-        return then(convert(f));
+        return and(convert(f));
     }
 
     /**
@@ -352,9 +350,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param f
      * @return
      */
-    public Result<E, Void> thenT(ThrowingRunnable<? extends E> f)
+    public Result<E, Void> andT(ThrowingRunnable<? extends E> f)
     {
-        return then(convert(f));
+        return and(convert(f));
     }
 
     /**
@@ -368,9 +366,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public Result<E, V> peek(Function<? super V, ? extends Result<? extends E, ?>> f)
     {
-        Function<V, Result<? extends E, ? extends V>> ff =
-                (V v) -> f.apply(v).setV(v);
-        return bind(ff);
+        return bind((V v) -> f.apply(v).set(v));
     }
 
     /**
@@ -404,11 +400,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @return
      * @param <T> The result's value type
      */
-    public <T> Result<E, T> set(Result<? extends E, ? extends T> value)
+    public <T> Result<E, T> and(Result<? extends E, ? extends T> value)
     {
-        Supplier<Result<? extends E, ? extends T>> v =
-                () -> value;
-        return then(v);
+        return and(() -> value);
     }
 
     /**
@@ -418,9 +412,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @return
      * @param <T> The value type
      */
-    public <T> Result<E, T> setV(T value)
+    public <T> Result<E, T> set(T value)
     {
-        return set(value(value));
+        return and(value(value));
     }
 
     /**
