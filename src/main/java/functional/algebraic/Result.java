@@ -24,6 +24,7 @@ import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -435,6 +436,20 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
                 (E e) -> error(e),
                 (V v) -> value(f.apply(v))
         );
+    }
+
+    /**
+     * Apply the function to the contained value and the supplied value, if present, and return the modified Result.
+     *
+     * @param f   The bifunction to apply to the contained value
+     * @return The modified Result.
+     */
+    public <U,R> Result<E, R> bimap(Result<E, U> r, BiFunction<? super V, ? super U, ? extends R> f)
+    {
+        return bind(
+                (V v) -> r.bind(
+                        (U u) -> value(
+                                f.apply(v, u))));
     }
 
     /**

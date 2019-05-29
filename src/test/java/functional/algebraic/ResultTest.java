@@ -341,6 +341,31 @@ public class ResultTest
     }
 
     @Test
+    public void bimapTestValue()
+    {
+        assertEquals(
+                Result.value(true),
+                Result.value(true).bimap(Result.value(false), (a, b) -> a || b));
+    }
+
+    @Test
+    public void bimapTestValueError()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.value(true).bimap(Result.<Exception, Boolean>error(e), (a, b) -> a || b));
+    }
+    @Test
+    public void bimapTestErrorValue()
+    {
+        IOException e = new IOException();
+        assertEquals(
+                Result.error(e),
+                Result.<IOException, Boolean>error(e).bimap(Result.value(false), (a, b) -> a || b));
+    }
+
+    @Test
     public void getTestValue() throws Exception
     {
         assertTrue(Result.value(true).get());
