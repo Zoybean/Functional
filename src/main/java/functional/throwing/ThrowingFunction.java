@@ -26,6 +26,7 @@ import java.util.Objects;
  * @param <R> the type of the result of the function
  * @param <E> the type of exceptions thrown by the function
  * @author Zoey Hewll
+ * @see java.util.function.Function
  */
 @FunctionalInterface
 public interface ThrowingFunction<T, R, E extends Throwable>

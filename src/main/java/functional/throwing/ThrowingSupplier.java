@@ -26,6 +26,7 @@ package functional.throwing;
  * @param <T> the type of results supplied by this supplier
  * @param <E> the type of exceptions thrown by this supplier
  * @author Zoey Hewll
+ * @see java.util.function.Supplier
  */
 @FunctionalInterface
 public interface ThrowingSupplier<T, E extends Throwable>

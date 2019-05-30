@@ -27,6 +27,7 @@ import java.util.Objects;
  * @param <T> the type of the input to the operation
  * @param <E> the type of exceptions thrown by the operation
  * @author Zoey Hewll
+ * @see java.util.function.Consumer
  */
 @FunctionalInterface
 public interface ThrowingConsumer<T, E extends Throwable>

@@ -24,6 +24,7 @@ package functional.throwing;
  *
  * @param <E> the type of exceptions thrown by the operation
  * @author Zoey Hewll
+ * @see Runnable
  */
 @FunctionalInterface
 public interface ThrowingRunnable<E extends Throwable>
