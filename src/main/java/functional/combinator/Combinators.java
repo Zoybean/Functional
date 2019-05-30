@@ -44,4 +44,9 @@ public final class Combinators
     {
         return (B b, A a) -> f.apply(a, b);
     }
+
+    public static <A, B> Function<A, B> cast(Function<? super A, ? extends B> f)
+    {
+        return f::apply;
+    }
 }
