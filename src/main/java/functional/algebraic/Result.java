@@ -59,24 +59,24 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Perform an operation which may throw a checked exception, and encapsulate the result.<br>
+     * Performs an operation which may throw a checked exception, and encapsulates the result.<br>
      * If the operation succeeds, the Result will contain the returned value.<br>
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
-     * <p>Conceptually the inverse of {@link #get}.
+     * <p>Conceptually the inverse of {@link #get}:<br>
      * {@code r <==> of(r::get)}<br>
      * {@code f.get() <==> of(f).get()}<br>
      *
-     * @param v   the operation to perform
+     * @param f   the operation to perform
      * @param <E> the type of checked exception which may be thrown
      * @param <V> the type of value which may be returned
      * @return A Result representing the outcome of the operation.
      */
-    public static <E extends Exception, V> Result<E, V> of(ThrowingSupplier<? extends V, ? extends E> v)
+    public static <E extends Exception, V> Result<E, V> of(ThrowingSupplier<? extends V, ? extends E> f)
     {
         try
         {
-            return value(v.get());
+            return value(f.get());
         }
         catch (RuntimeException e)
         {
@@ -91,7 +91,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Perform an operation which may throw a checked exception, and encapsulate the result.
+     * Performs an operation which may throw a checked exception, and encapsulates the result.
      * If the operation succeeds, the Result will contain nothing (Void).
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
@@ -151,9 +151,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Convert an operation that may throw a checked exception into an operation that returns a result.
+     * Convert an operation that may throw a checked exception into a supplier that returns a result.
      *
-     * @param v   The operation to convert
+     * @param v   The supplier to convert
      * @param <E> The checked exception type
      * @param <V> The operation's return type
      * @return The converted operation, which returns a result instead of throwing an exception.
@@ -164,9 +164,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Convert an action that may throw a checked exception into an operation that returns a result.
+     * Convert an operation that may throw a checked exception into a supplier that returns a result.
      *
-     * @param v   The action to convert
+     * @param v   The operation to convert
      * @param <E> The checked exception type
      * @return The converted operation, which returns a result instead of throwing an exception.
      */
@@ -475,10 +475,11 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
+     * Unsafely unwraps the result into a returned value or thrown exception.
      * If the result is a value, return it.<br>
      * If it is an exception, throw it.<br>
      *
-     * <p>Conceptually the inverse of {@link #of} and {@link #ofRuntime}.
+     * <p>Conceptually the inverse of {@link #of} and {@link #ofRuntime}:<br>
      * {@code r <==> of(r.get())}<br>
      * {@code f() <==> of(f()).get()}<br>
      *
