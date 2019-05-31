@@ -27,6 +27,7 @@ import java.util.Objects;
  * @param <T> the type of the input to the operation
  * @param <E> the type of exceptions thrown by the operation
  * @author Zoey Hewll
+ * @see java.util.function.Consumer
  */
 @FunctionalInterface
 public interface ThrowingConsumer<T, E extends Throwable>
@@ -62,7 +63,7 @@ public interface ThrowingConsumer<T, E extends Throwable>
     }
 
     /**
-     * Returns a composed function that first performs this operation on
+     * Returns a composed @code{ThrowingFunction} that first performs this operation on
      * its input, and then returns the value supplied by {@code after}.
      * If evaluation of either operation throws an exception, it is relayed to
      * the caller of the composed function.
@@ -75,6 +76,7 @@ public interface ThrowingConsumer<T, E extends Throwable>
      */
     default <R> ThrowingFunction<T, R, E> andThen(ThrowingSupplier<R, E> after)
     {
+        Objects.requireNonNull(after);
         return (T t) ->
         {
             this.accept(t);

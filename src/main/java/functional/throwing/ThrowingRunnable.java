@@ -17,6 +17,8 @@
 
 package functional.throwing;
 
+import java.util.Objects;
+
 /**
  * Represents a fallible operation that accepts no input and returns no result.
  * Unlike most other functional interfaces, {@code ThrowingRunnable} is expected
@@ -24,6 +26,7 @@ package functional.throwing;
  *
  * @param <E> the type of exceptions thrown by the operation
  * @author Zoey Hewll
+ * @see Runnable
  */
 @FunctionalInterface
 public interface ThrowingRunnable<E extends Throwable>
@@ -49,6 +52,7 @@ public interface ThrowingRunnable<E extends Throwable>
      */
     default <R> ThrowingSupplier<R, E> andThen(ThrowingSupplier<R, E> after)
     {
+        Objects.requireNonNull(after);
         return () ->
         {
             run();

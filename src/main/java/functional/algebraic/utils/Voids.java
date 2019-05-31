@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A utility class for converting between {@link Void} and {@code void}
+ * A utility class for converting between {@code void} and {@link Void}.
  * @author Zoey Hewll
  */
 public final class Voids
@@ -37,7 +37,7 @@ public final class Voids
      *
      * @param f   The function to convert
      * @param <E> The parameter type of the function
-     * @return An equivalent function that returns Void instead of void
+     * @return An equivalent function that returns {@link Void} instead of void
      */
     public static <E> Function<E, Void> convert(Consumer<E> f)
     {
@@ -45,10 +45,10 @@ public final class Voids
     }
 
     /**
-     * Turns a function returning void into a function returning Void.
+     * Turns a function returning {@link Void} into a function returning void.
      *
      * @param f The function to convert
-     * @return An equivalent function that returns Void instead of void
+     * @return An equivalent function that returns {@link Void} instead of void
      */
     public static Supplier<Void> convert(Runnable f)
     {
@@ -56,11 +56,12 @@ public final class Voids
     }
 
     /**
-     * Turns a function returning void into a function returning Void.
+     * Turns a function returning void into a function returning {@link Void}.
      *
      * @param f   The function to convert
      * @param <T> The parameter type of the function
-     * @return An equivalent function that returns Void instead of void
+     * @param <E> The thrown exception type
+     * @return An equivalent function that returns {@link Void} instead of void
      */
     public static <T, E extends Exception> ThrowingFunction<T, Void, E> convertUnsafe(ThrowingConsumer<T, E> f)
     {
@@ -68,10 +69,11 @@ public final class Voids
     }
 
     /**
-     * Turns a function returning void into a function returning Void.
+     * Turns a function returning void into a function returning {@link Void}.
      *
      * @param f The function to convert
-     * @return An equivalent function that returns Void instead of void
+     * @param <E> The thrown exception type
+     * @return An equivalent function that returns {@link Void} instead of void
      */
     public static <E extends Exception> ThrowingSupplier<Void, E> convertUnsafe(ThrowingRunnable<E> f)
     {

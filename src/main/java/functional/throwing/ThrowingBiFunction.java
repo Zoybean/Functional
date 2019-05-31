@@ -22,43 +22,25 @@ import java.util.Objects;
 /**
  * Represents a fallible function that accepts one argument and produces a result.
  *
- * @param <T> the type of the input to the function
+ * @param <T> the type of the first argument to the function
+ * @param <U> the type of the second argument to the function
  * @param <R> the type of the result of the function
  * @param <E> the type of exceptions thrown by the function
  * @author Zoey Hewll
- * @see java.util.function.Function
+ * @see java.util.function.BiFunction
  */
-@FunctionalInterface
-public interface ThrowingFunction<T, R, E extends Throwable>
+
+public interface ThrowingBiFunction<T, U, R, E extends Exception>
 {
     /**
      * Applies this function to the given argument.
      *
-     * @param t the function argument
+     * @param t the first function argument
+     * @param u the second function argument
      * @return the function result
      * @throws E if the function throws an exception
      */
-    R apply(T t) throws E;
-
-    /**
-     * Returns a composed function that first applies the {@code before}
-     * function to its input, and then applies this function to the result.
-     * If evaluation of either function throws an exception, it is relayed to
-     * the caller of the composed function.
-     *
-     * @param <V>    the type of input to the {@code before} function, and to the
-     *               composed function
-     * @param before the function to apply before this function is applied
-     * @return a composed function that first applies the {@code before}
-     * function and then applies this function
-     * @throws NullPointerException if before is null
-     * @see #andThen(ThrowingFunction)
-     */
-    default <V> ThrowingFunction<V, R, E> compose(ThrowingFunction<? super V, ? extends T, ? extends E> before)
-    {
-        Objects.requireNonNull(before);
-        return (V v) -> this.apply(before.apply(v));
-    }
+    R apply(T t, U u) throws E;
 
     /**
      * Returns a composed function that first applies this function to
@@ -66,17 +48,15 @@ public interface ThrowingFunction<T, R, E extends Throwable>
      * If evaluation of either function throws an exception, it is relayed to
      * the caller of the composed function.
      *
-     * @param <V>   the type of output of the {@code after} function, and of the
-     *              composed function
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
      * @param after the function to apply after this function is applied
      * @return a composed function that first applies this function and then
      * applies the {@code after} function
      * @throws NullPointerException if after is null
-     * @see #compose(ThrowingFunction)
      */
-    default <V> ThrowingFunction<T, V, E> andThen(ThrowingFunction<? super R, ? extends V, ? extends E> after)
-    {
+    default <V> ThrowingBiFunction<T, U, V, E> andThen(ThrowingFunction<? super R, ? extends V, ? extends E> after) {
         Objects.requireNonNull(after);
-        return (T t) -> after.apply(this.apply(t));
+        return (T t, U u) -> after.apply(apply(t, u));
     }
 }
