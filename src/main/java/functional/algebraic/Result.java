@@ -18,6 +18,7 @@
 package functional.algebraic;
 
 import functional.algebraic.utils.Voids;
+import functional.combinator.Combinators;
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
@@ -212,7 +213,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     static <E extends Exception, V> Result<E, V> join(Result<? extends E, ? extends Result<? extends E, ? extends V>> r)
     {
-        return cast(r.match(
+        return cast(r.matchThen(
                 e -> error(e),
                 v -> v
         ));
@@ -266,9 +267,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param <T> The return type of the functions.
      * @return The value returned by the matched function.
      */
-    public <T> T match(Function<? super E, ? extends T> ef, Function<? super V, ? extends T> vf)
+    public <T> T matchThen(Function<? super E, ? extends T> ef, Function<? super V, ? extends T> vf)
     {
-        return either.match(ef, vf);
+        return either.matchThen(ef, vf);
     }
 
     /**
@@ -283,6 +284,27 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
+     * Applies a function that can take any Object to both the error and the result.
+     * Useful for e.g. Systemm.out::println.
+     *
+     * @param f the function to apply
+     */
+    public void collapse(Consumer<Object> f) {
+        either.match(f, f);
+    }
+
+    /**
+     * Returns the value in this Result, or a default if there is an error.
+     *
+     * @param defaultValue the default value
+     * @return the value or default
+     */
+    public V orElse(V defaultValue) {
+        return either.matchThen(ignored -> defaultValue, val -> val);
+    }
+
+    /**
+     * Produce a Result of another type from the value in this result, or propagate the error.
      * Equivalent to haskell's Monadic bind {@code (this >>=)}.
      *
      * @param f the function to bind
@@ -318,6 +340,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
+     * Produce a new Result, ignoring the value in this one and propagating the error.
      * Equivalent to haskell {@code (this *>)}.
      *
      * @param f
@@ -364,10 +387,14 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public <F extends Exception> Result<F, V> or(Supplier<? extends Result<? extends F, ? extends V>> r)
     {
-        return match(
+        return matchThen(
                 (E e) -> cast(r.get()),
                 (V v) -> value(v)
         );
+    }
+
+    public <F extends Exception> Result<F, V> or(Result<? extends F, ? extends V> r) {
+        return or(() -> r);
     }
 
     /**
@@ -380,6 +407,26 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     public <F extends Exception> Result<F, V> orT(ThrowingSupplier<? extends V, ? extends F> f)
     {
         return or(convert(f));
+    }
+
+    /**
+     * Perform an operation on the value inside this result, or do nothing if there is an error.
+     * @param op the operation
+     * @return the unaltered Result
+     */
+    public Result<E, V> ok(Consumer<? super V> op) {
+        match(Combinators::noop, op);
+        return this;
+    }
+
+    /**
+     * Perform an operation on the error inside this result, or do nothing if there is no error.
+     * @param op the operation
+     * @return the unaltered Result
+     */
+    public Result<E, V> err(Consumer<? super E> op) {
+        match(op, Combinators::noop);
+        return this;
     }
 
 
@@ -454,10 +501,27 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public <T> Result<E, T> map(Function<? super V, ? extends T> f)
     {
-        return match(
+        return matchThen(
                 (E e) -> error(e),
                 (V v) -> value(f.apply(v))
         );
+    }
+
+    public <T extends Exception> Result<T, V> mapError(Function<? super E, ? extends T> f) {
+        return matchThen(
+                (E e) -> error(f.apply(e)),
+                (V v) -> value(v)
+        );
+    }
+
+    /**
+     * Applies a function to turn an error into a value if there is an error, and returns the resulting value
+     * or the value inside this Result.
+     * @param f the function
+     * @return
+     */
+    public V consumeError(Function<? super E, ? extends V> f) {
+        return matchThen(f, Combinators::id);
     }
 
     /**
@@ -512,7 +576,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
 
     public String toString()
     {
-        return match(
+        return matchThen(
                 e -> "Result.error(" + e + ')',
                 v -> "Result.value(" + v + ')'
         );

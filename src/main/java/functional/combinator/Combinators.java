@@ -34,6 +34,7 @@ public final class Combinators
     }
 
     public static <A> void noop(A __) {}
+    public static <A> void noop() {}
 
     public static <A, B, C> Function<A, C> compose(Function<A, B> ab, Function<B, C> bc)
     {

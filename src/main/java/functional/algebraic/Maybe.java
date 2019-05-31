@@ -17,11 +17,12 @@
 
 package functional.algebraic;
 
-import org.jetbrains.annotations.Nullable;
+import functional.combinator.Combinators;
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -42,16 +43,16 @@ import java.util.function.Supplier;
  *
  * just(x).map(f) == just(y)
  * just(x).map(g) == just(just(y))
- * just(x).bind(g) == just(y)
+ * just(x).andThen(g) == just(y)
  *
  * just(x).map(h) == just(nothing())
- * just(x).bind(h) == nothing()
+ * just(x).andThen(h) == nothing()
  * }
  *
  * Nothing always yields Nothing:
  * {@code
  * nothing().map(_) == nothing()
- * nothing().bind(_) == nothing()
+ * nothing().andThen(_) == nothing()
  * }
  *
  * Matching safely unwraps the data and applies the matched operation:
@@ -62,6 +63,7 @@ import java.util.function.Supplier;
  *
  * @param <V> The type of the optional value
  * @author Zoey Hewll
+ * @author Eleanor McMurtry (renamed match overloads to avoid inference errors)
  */
 public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateException>
 {
@@ -112,7 +114,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <T>  the type of the value returned by the supplied operations
      * @return the result of the matched operation
      */
-    public <T> T match(Function<? super V, ? extends T> some, Supplier<? extends T> none)
+    public <T> T matchThen(Function<? super V, ? extends T> some, Supplier<? extends T> none)
     {
         return unsafeMatch(
                 some::apply,
@@ -150,7 +152,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <T> the type of the function's optional return value
      * @return the modified Maybe
      */
-    public abstract <T> Maybe<T> bind(Function<? super V, ? extends Maybe<? extends T>> f);
+    public abstract <T> Maybe<T> andThen(Function<? super V, ? extends Maybe<? extends T>> f);
 
     /**
      * Returns the contained value, if it exists, otherwise raise an exception.
@@ -159,18 +161,35 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @throws IllegalStateException if nothing is contained
      */
     public abstract V get() throws IllegalStateException;
+    public Maybe<V> setIfNothing(V value) {
+        return Maybe.just(this.orElse(value));
+    }
 
     /**
-     * Returns the contained value, or the supplied default if it does not exits.
+     * Returns the contained value, or the supplied default if it does not exist.
      *
      * @param value the default value to use
-     * @return the contained value, or the supplied default if it does not exits
+     * @return the contained value, or the supplied default if it does not exist
      */
-    public V fromMaybe(V value)
+    public V orElse(V value)
     {
-        return match(
+        return matchThen(
                 (V v) -> v,
                 () -> value
+        );
+    }
+
+    /**
+     * Returns the contained value, or the supplied default if it does not exist.
+     *
+     * @param supplier the supplier of the value to use
+     * @return the contained value, or the supplied default if it does not exist
+     */
+    public V orElse(Supplier<V> supplier)
+    {
+        return matchThen(
+                (V v) -> v,
+                () -> supplier.get()
         );
     }
 
@@ -181,10 +200,14 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      */
     public boolean isJust()
     {
-        return match(
+        return matchThen(
                 (V v) -> true,
                 () -> false
         );
+    }
+
+    public void consume(Consumer<V> consumer) {
+        match(consumer, Combinators::noop);
     }
 
     /**
@@ -251,7 +274,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      */
     static <T, V extends T> Maybe<T> cast(Maybe<V> m)
     {
-        return m.match(
+        return m.matchThen(
                 (T value) -> just(value),
                 () -> nothing()
         );
@@ -309,7 +332,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         }
 
         @Override
-        public <T> Maybe<T> bind(Function<? super V, ? extends Maybe<? extends T>> f)
+        public <T> Maybe<T> andThen(Function<? super V, ? extends Maybe<? extends T>> f)
         {
             return nothing();
         }
@@ -385,7 +408,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         }
 
         @Override
-        public <T> Maybe<T> bind(Function<? super V, ? extends Maybe<? extends T>> f)
+        public <T> Maybe<T> andThen(Function<? super V, ? extends Maybe<? extends T>> f)
         {
             return cast(f.apply(value));
         }
