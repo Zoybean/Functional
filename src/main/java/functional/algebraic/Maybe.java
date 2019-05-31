@@ -22,7 +22,6 @@ import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -206,6 +205,10 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         );
     }
 
+    /**
+     * Consumes the value inside this Result, if there is one.
+     * @param consumer the consuming operation
+     */
     public void consume(Consumer<V> consumer) {
         match(consumer, Combinators::noop);
     }
@@ -217,7 +220,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @return nothing() if the value is null, and just(value) otherwise
      * @param <V> The type of the optional value
      */
-    public static <V> Maybe<V> of(@Nullable V value)
+    public static <V> Maybe<V> of(V value)
     {
         return value == null
                 ? nothing()

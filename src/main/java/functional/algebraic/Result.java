@@ -507,7 +507,13 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
         );
     }
 
-    public <T extends Exception> Result<T, V> mapError(Function<? super E, ? extends T> f) {
+    /**
+     * Maps a function of errors to the error inside this Result, or does nothing if there is none.
+     * @param f the function to apply
+     * @param <F> the resulting error type
+     * @return the mapped Result
+     */
+    public <F extends Exception> Result<F, V> mapError(Function<? super E, ? extends F> f) {
         return matchThen(
                 (E e) -> error(f.apply(e)),
                 (V v) -> value(v)
