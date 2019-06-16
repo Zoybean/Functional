@@ -526,7 +526,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param f the function
      * @return
      */
-    public V consumeError(Function<? super E, ? extends V> f) {
+    public V convertError(Function<? super E, ? extends V> f) {
         return matchThen(f, Combinators::id);
     }
 
