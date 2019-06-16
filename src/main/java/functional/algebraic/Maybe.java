@@ -62,7 +62,7 @@ import java.util.function.Supplier;
  *
  * @param <V> The type of the optional value
  * @author Zoey Hewll
- * @author Eleanor McMurtry (renamed match overloads to avoid inference errors)
+ * @author Eleanor McMurtry
  */
 public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateException>
 {
