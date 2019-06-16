@@ -218,6 +218,18 @@ public abstract class Either<L, R>
     }
 
     /**
+     * Return the supplied Either with left and right swapped.
+     * @return a flipped Either
+     */
+    public Either<R, L> flip()
+    {
+        return matchThen(
+                (L l) -> right(l),
+                (R r) -> left(r)
+        );
+    }
+
+    /**
      * Returns an Either containing a {@link Left} value.
      *
      * @param value The value to contain

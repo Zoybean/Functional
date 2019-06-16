@@ -205,6 +205,42 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     }
 
     /**
+     * Transposes a Maybe of a Result into a Result of a Maybe.
+     * @param m
+     * @param <E>
+     * @param <V>
+     * @return
+     */
+    public static <E extends Exception, V> Result<E, Maybe<V>> transpose(Maybe<Result<E, V>> m)
+    {
+        return m.matchThen(
+                (Result<E, V> r) -> r.matchThen(
+                        (E e) -> error(e),
+                        (V v) -> value(Maybe.just(v))
+                ),
+                () -> value(Maybe.nothing())
+        );
+    }
+
+    /**
+     * Transposes a Result of a Maybe into a Maybe of a Result.
+     * @param r
+     * @param <E>
+     * @param <V>
+     * @return
+     */
+    public static <E extends Exception, V> Maybe<Result<E, V>> transpose(Result<E, Maybe<V>> r)
+    {
+        return r.matchThen(
+                (E e) -> Maybe.just(error(e)),
+                (Maybe<V> m) -> m.matchThen(
+                        (V v) -> Maybe.just(value(v)),
+                        () -> Maybe.nothing()
+                )
+        );
+    }
+
+    /**
      * Converts a nested Result (aka Result of a Result) into a single Result.
      *
      * @param r   The result to join
