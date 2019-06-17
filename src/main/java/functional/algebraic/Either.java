@@ -103,6 +103,17 @@ public abstract class Either<L, R>
                 rf::accept);
     }
 
+
+    /**
+     * Applies a function that can take any Object to whichever value is contained.
+     *
+     * @param f the function to apply
+     */
+    public void collapse(Consumer<Object> f) {
+        match(f, f);
+    }
+
+
     /**
      * <p>Apply a function to the contained value, and return an {@link Either} corresponding to the return types.
      * The functions need not return the same type.

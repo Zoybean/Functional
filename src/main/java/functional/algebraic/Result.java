@@ -290,7 +290,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param f the function to apply
      */
     public void collapse(Consumer<Object> f) {
-        either.match(f, f);
+        either.collapse(f);
     }
 
     /**
