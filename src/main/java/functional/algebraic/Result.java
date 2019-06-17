@@ -40,6 +40,7 @@ import java.util.function.Supplier;
  * @param <E> the error alternative type.
  * @param <V> the value alternative type.
  * @author Zoey Hewll
+ * @author Eleanor McMurtry
  */
 public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
 {

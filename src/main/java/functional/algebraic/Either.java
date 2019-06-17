@@ -35,6 +35,7 @@ import java.util.function.Function;
  * @param <L> The left alternative type
  * @param <R> The right alternative type
  * @author Zoey Hewll
+ * @author Eleanor McMurtry
  */
 public abstract class Either<L, R>
 {
