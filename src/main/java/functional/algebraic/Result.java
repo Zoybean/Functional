@@ -300,7 +300,10 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @return the value or default
      */
     public V orElse(V defaultValue) {
-        return either.matchThen(ignored -> defaultValue, val -> val);
+        return either.matchThen(
+            __ -> defaultValue,
+            val -> val
+        );
     }
 
     /**
