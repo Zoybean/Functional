@@ -206,7 +206,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
     }
 
     /**
-     * Consumes the value inside this Result, if there is one.
+     * Consumes the value inside this Maybe, if there is one.
      * @param consumer the consuming operation
      */
     public void consume(Consumer<V> consumer) {
