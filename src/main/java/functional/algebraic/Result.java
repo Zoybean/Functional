@@ -414,7 +414,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      * @param op the operation
      * @return the unaltered Result
      */
-    public Result<E, V> ok(Consumer<? super V> op) {
+    public Result<E, V> ifOk(Consumer<? super V> op) {
         match(Combinators::noop, op);
         return this;
     }
