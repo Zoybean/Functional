@@ -153,7 +153,7 @@ public class EitherTest
     @Test
     public void matchTestProducingLeft()
     {
-        assertTrue(left(0).match(
+        assertTrue(left(0).matchThen(
                 l -> l == 0,
                 r -> false)
         );
@@ -162,7 +162,7 @@ public class EitherTest
     @Test
     public void matchTestProducingRight()
     {
-        assertTrue(right(0).match(
+        assertTrue(right(0).matchThen(
                 l -> false,
                 r -> r == 0)
         );

@@ -68,8 +68,8 @@ public class MaybeTest
     @Test
     public void fromMaybeTest()
     {
-        assertTrue(Maybe.<Boolean>just(true).fromMaybe(false));
-        assertFalse(Maybe.<Boolean>nothing().fromMaybe(false));
+        assertTrue(Maybe.<Boolean>just(true).orElse(false));
+        assertFalse(Maybe.<Boolean>nothing().orElse(false));
     }
 
     @Test

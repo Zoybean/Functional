@@ -35,6 +35,7 @@ import java.util.function.Function;
  * @param <L> The left alternative type
  * @param <R> The right alternative type
  * @author Zoey Hewll
+ * @author Eleanor McMurtry
  */
 public abstract class Either<L, R>
 {
@@ -83,7 +84,7 @@ public abstract class Either<L, R>
      * @param <T> The return type of the functions.
      * @return The value returned by the matched function.
      */
-    public <T> T match(Function<? super L, ? extends T> lf, Function<? super R, ? extends T> rf)
+    public <T> T matchThen(Function<? super L, ? extends T> lf, Function<? super R, ? extends T> rf)
     {
         return unsafeMatch(
                 lf::apply,
@@ -103,6 +104,17 @@ public abstract class Either<L, R>
                 rf::accept);
     }
 
+
+    /**
+     * Applies a function that can take any Object to whichever value is contained.
+     *
+     * @param f the function to apply
+     */
+    public void collapse(Consumer<Object> f) {
+        match(f, f);
+    }
+
+
     /**
      * <p>Apply a function to the contained value, and return an {@link Either} corresponding to the return types.
      * The functions need not return the same type.
@@ -119,7 +131,7 @@ public abstract class Either<L, R>
      */
     public <A, B> Either<A, B> bimap(Function<? super L, ? extends A> lf, Function<? super R, ? extends B> rf)
     {
-        return match(
+        return matchThen(
                 (L l) -> left(lf.apply(l)),
                 (R r) -> right(rf.apply(r))
         );
@@ -133,7 +145,7 @@ public abstract class Either<L, R>
      */
     public L fromLeft(L left)
     {
-        return match(
+        return matchThen(
                 (L l) -> l,
                 (R r) -> left
         );
@@ -147,7 +159,7 @@ public abstract class Either<L, R>
      */
     public R fromRight(R right)
     {
-        return match(
+        return matchThen(
                 (L l) -> right,
                 (R r) -> r
         );
@@ -186,7 +198,7 @@ public abstract class Either<L, R>
      */
     public boolean isLeft()
     {
-        return match(
+        return matchThen(
                 (L l) -> true,
                 (R r) -> false
         );
@@ -199,7 +211,7 @@ public abstract class Either<L, R>
      */
     public boolean isRight()
     {
-        return match(
+        return matchThen(
                 (L l) -> false,
                 (R r) -> true
         );
@@ -241,7 +253,7 @@ public abstract class Either<L, R>
      */
     static <L, R> Either<L, R> cast(Either<? extends L, ? extends R> either)
     {
-        return either.match(
+        return either.matchThen(
                 (L l) -> left(l),
                 (R r) -> right(r)
         );
