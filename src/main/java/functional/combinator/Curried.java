@@ -23,11 +23,6 @@ import java.util.function.Supplier;
 
 public final class Curried
 {
-    public static <A> Supplier<A> id(A a)
-    {
-        return () -> a;
-    }
-
     public static <A, B> Function<B, A> constant(A a)
     {
         return Curried.<A, B, A>curry(Combinators::<A,B>constant).apply(a);

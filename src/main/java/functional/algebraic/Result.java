@@ -251,8 +251,8 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     static <E extends Exception, V> Result<E, V> join(Result<? extends E, ? extends Result<? extends E, ? extends V>> r)
     {
         return cast(r.matchThen(
-                e -> error(e),
-                v -> v
+                Result::error,
+                Combinators::id
         ));
     }
 
@@ -604,8 +604,8 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
     public V get() throws E
     {
         return either.unsafeMatchThen(
-                (E e) -> {throw e;},
-                (V v) -> v
+                Combinators::toss,
+                Combinators::id
         );
     }
 

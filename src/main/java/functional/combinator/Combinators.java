@@ -50,4 +50,9 @@ public final class Combinators
     {
         return f::apply;
     }
+
+    public static <T extends Throwable, A> A toss(T t) throws T
+    {
+        throw t;
+    }
 }
