@@ -37,8 +37,8 @@ import java.util.function.Supplier;
  * This allows checked exceptions to be encapsulated in functional code,
  * and exception handling in the form of pattern matching.
  *
- * @param <E> the error alternative type.
- * @param <V> the value alternative type.
+ * @param <E> The error alternative type.
+ * @param <V> The value alternative type.
  * @author Zoey Hewll
  * @author Eleanor McMurtry
  */
@@ -206,9 +206,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
 
     /**
      * Transposes a Maybe of a Result into a Result of a Maybe.
-     * @param m
-     * @param <E>
-     * @param <V>
+     * @param m   A maybe of a result.
+     * @param <E> The error alternative type.
+     * @param <V> The value alternative type.
      * @return
      */
     public static <E extends Exception, V> Result<E, Maybe<V>> transpose(Maybe<Result<E, V>> m)
@@ -224,9 +224,9 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
 
     /**
      * Transposes a Result of a Maybe into a Maybe of a Result.
-     * @param r
-     * @param <E>
-     * @param <V>
+     * @param r   A result of a maybe.
+     * @param <E> The error alternative type.
+     * @param <V> The value alternative type.
      * @return
      */
     public static <E extends Exception, V> Maybe<Result<E, V>> transpose(Result<E, Maybe<V>> r)
@@ -433,6 +433,11 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
         );
     }
 
+    /**
+     * @param r
+     * @param <F>
+     * @return
+     */
     public <F extends Exception> Result<F, V> or(Result<? extends F, ? extends V> r) {
         return or(() -> r);
     }
