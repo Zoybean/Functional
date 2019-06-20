@@ -197,7 +197,7 @@ public class EitherTest
     @Test
     public void unsafeMatchTestProducingLeft()
     {
-        assertTrue(left(0).unsafeMatch(
+        assertTrue(left(0).unsafeMatchThen(
                 l -> l == 0,
                 r -> {throw new AssertionFailedError("Wrong branch taken");}
         ));
@@ -208,13 +208,13 @@ public class EitherTest
     {
         ThrowingFunction<Integer, ?, IOException> left = l -> { throw new IOException("This is the right path"); };
         ThrowingFunction<Object, ?, IOException> right = r -> { throw new AssertionFailedError("Wrong branch taken"); };
-        left(0).unsafeMatch(left, right);
+        left(0).unsafeMatchThen(left, right);
     }
 
     @Test
     public void unsafeMatchTestProducingRight()
     {
-        assertTrue(right(0).unsafeMatch(
+        assertTrue(right(0).unsafeMatchThen(
                 l -> {throw new AssertionFailedError("Wrong branch taken");},
                 r -> r == 0
         ));
@@ -225,7 +225,7 @@ public class EitherTest
     {
         ThrowingFunction<Object, ?, IOException> left = l -> { throw new AssertionFailedError("Wrong branch taken"); };
         ThrowingFunction<Integer, ?, IOException> right = r -> { throw new IOException("This is the right path"); };
-        right(0).unsafeMatch(left, right);
+        right(0).unsafeMatchThen(left, right);
     }
 
     @Test
@@ -249,7 +249,7 @@ public class EitherTest
     {
         ThrowingFunction<Integer, ?, IOException> left = l -> { throw new IOException("This is the right path"); };
         ThrowingFunction<Object, ?, IOException> right = r -> { throw new AssertionFailedError("Wrong branch taken"); };
-        left(0).unsafeMatch(left, right);
+        left(0).unsafeMatchThen(left, right);
     }
 
     @Test
@@ -273,7 +273,7 @@ public class EitherTest
     {
         ThrowingFunction<Object, ?, IOException> left = l -> { throw new AssertionFailedError("Wrong branch taken"); };
         ThrowingFunction<Integer, ?, IOException> right = r -> { throw new IOException("This is the right path"); };
-        right(0).unsafeMatch(left, right);
+        right(0).unsafeMatchThen(left, right);
     }
 
     @Test

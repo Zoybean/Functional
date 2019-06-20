@@ -603,7 +603,7 @@ public class Result<E extends Exception, V> implements ThrowingSupplier<V, E>
      */
     public V get() throws E
     {
-        return either.unsafeMatch(
+        return either.unsafeMatchThen(
                 (E e) -> {throw e;},
                 (V v) -> v
         );

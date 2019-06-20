@@ -62,7 +62,7 @@ public abstract class Either<L, R>
      * @return The value returned by the matched function.
      * @throws E The error thrown by the functions.
      */
-    public abstract <T, E extends Throwable> T unsafeMatch(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E;
+    public abstract <T, E extends Throwable> T unsafeMatchThen(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E;
 
     /**
      * Match on the contained value, performing the operation pertaining to the contained type.
@@ -86,7 +86,7 @@ public abstract class Either<L, R>
      */
     public <T> T matchThen(Function<? super L, ? extends T> lf, Function<? super R, ? extends T> rf)
     {
-        return unsafeMatch(
+        return unsafeMatchThen(
                 lf::apply,
                 rf::apply);
     }
@@ -321,7 +321,7 @@ public abstract class Either<L, R>
         }
 
         @Override
-        public <T, E extends Throwable> T unsafeMatch(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E
+        public <T, E extends Throwable> T unsafeMatchThen(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E
         {
             return lf.apply(value);
         }
@@ -380,7 +380,7 @@ public abstract class Either<L, R>
         }
 
         @Override
-        public <T, E extends Throwable> T unsafeMatch(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E
+        public <T, E extends Throwable> T unsafeMatchThen(ThrowingFunction<? super L, ? extends T, ? extends E> lf, ThrowingFunction<? super R, ? extends T, ? extends E> rf) throws E
         {
             return rf.apply(value);
         }
