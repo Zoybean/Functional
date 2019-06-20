@@ -39,8 +39,9 @@ public class ResultTest
     {
         assertTrue(Result.value(true)
                 .matchThen(
-                        e -> false,
-                        v -> v));
+                        v -> v,
+                        e -> false
+                ));
     }
 
     @Test
@@ -48,8 +49,9 @@ public class ResultTest
     {
         assertTrue(Result.error(new Exception())
                 .matchThen(
-                        e -> true,
-                        v -> false));
+                        v -> false,
+                        e -> true
+                ));
     }
 
     @Test
@@ -57,8 +59,8 @@ public class ResultTest
     {
         Result.value(true)
                 .match(
-                        e -> {throw new AssertionFailedError("Wrong branch taken");},
-                        v -> {});
+                        v -> {},
+                        e -> {throw new AssertionFailedError("Wrong branch taken");});
     }
 
     @Test
@@ -66,8 +68,8 @@ public class ResultTest
     {
         Result.error(new Exception())
                 .match(
-                        e -> {},
-                        v -> {throw new AssertionFailedError("Wrong branch taken");});
+                        v -> {throw new AssertionFailedError("Wrong branch taken");},
+                        e -> {});
     }
 
     @Test
