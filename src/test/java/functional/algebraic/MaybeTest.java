@@ -42,8 +42,8 @@ public class MaybeTest
         int x = 0;
         Function<Integer, Maybe<Integer>> f = i -> just(i + 1);
 
-        assertEquals(just(x).bind(f), f.apply(x));
-        assertTrue(just(x).bind(f).isJust());
+        assertEquals(just(x).andThen(f), f.apply(x));
+        assertTrue(just(x).andThen(f).isJust());
     }
 
     @Test
@@ -52,8 +52,8 @@ public class MaybeTest
         int x = 0;
         Function<Object, Maybe<Object>> f = i -> nothing();
 
-        assertEquals(just(x).bind(f), f.apply(x));
-        assertEquals(just(x).bind(f), nothing());
+        assertEquals(just(x).andThen(f), f.apply(x));
+        assertEquals(just(x).andThen(f), nothing());
     }
 
     @Test
@@ -62,7 +62,7 @@ public class MaybeTest
         Function<Integer, Maybe<Integer>> g = i -> just(i + 1);
 
         Maybe<Integer> nothing = Maybe.nothing();
-        assertEquals(nothing.bind(g), nothing());
+        assertEquals(nothing.andThen(g), nothing());
     }
 
     @Test
@@ -115,7 +115,7 @@ public class MaybeTest
         Function<Integer, Boolean> some= i -> true;
         Supplier<Boolean> none = () -> false;
 
-        assertTrue(just(0).match(some, none));
+        assertTrue(just(0).matchThen(some, none));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class MaybeTest
         Supplier<Boolean> none = () -> false;
         Maybe<Integer> nothing = nothing();
 
-        assertFalse(nothing.match(some, none));
+        assertFalse(nothing.matchThen(some, none));
     }
 
     @Test

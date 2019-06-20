@@ -38,7 +38,7 @@ public class ResultTest
     public void matchTestFunctionValue()
     {
         assertTrue(Result.value(true)
-                .match(
+                .matchThen(
                         e -> false,
                         v -> v));
     }
@@ -47,7 +47,7 @@ public class ResultTest
     public void matchTestFunctionError()
     {
         assertTrue(Result.error(new Exception())
-                .match(
+                .matchThen(
                         e -> true,
                         v -> false));
     }
