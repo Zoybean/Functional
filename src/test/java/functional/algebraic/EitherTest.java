@@ -17,9 +17,7 @@
 
 package functional.algebraic;
 
-import functional.throwing.ThrowingConsumer;
-import functional.throwing.ThrowingFunction;
-import junit.framework.AssertionFailedError;
+import functional.combinator.Combinators;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -27,20 +25,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static functional.algebraic.Either.left;
 import static functional.algebraic.Either.right;
+import static functional.combinator.Combinators.toss;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class EitherTest
 {
-    @Test
-    public void bimapTestLeft()
-    {
-        assertEquals(left(0).bimap(l -> l == 0, r -> false), left(true));
-    }
+
+    public static Error error = new AssertionError("Wrong branch taken");
+    public static IOException expected = new IOException("This is the right branch");
 
     @Test
-    public void bimapTestRight()
+    public void bimapTest()
     {
+        assertEquals(left(0).bimap(l -> l == 0, r -> false), left(true));
         assertEquals(right(0).bimap(l -> false, r -> r == 0), right(true));
     }
 
@@ -67,26 +65,16 @@ public class EitherTest
     }
 
     @Test
-    public void fromLeftTestLeft()
+    public void fromLeftTest()
     {
         assertTrue(left(true).fromLeft(false));
-    }
-
-    @Test
-    public void fromLeftTestRight()
-    {
         assertFalse((Boolean) right(true).fromLeft(false));
     }
 
     @Test
-    public void fromRightTestLeft()
+    public void fromRightTest()
     {
         assertFalse((Boolean) left(true).fromRight(false));
-    }
-
-    @Test
-    public void fromRightTestRight()
-    {
         assertTrue(right(true).fromRight(false));
     }
 
@@ -127,41 +115,26 @@ public class EitherTest
     }
 
     @Test
-    public void isLeftTestLeft()
+    public void isLeftTest()
     {
         assertTrue(left(0).isLeft());
-    }
-
-    @Test
-    public void isLeftTestRight()
-    {
         assertFalse(right(0).isLeft());
     }
 
     @Test
-    public void isRightTestLeft()
+    public void isRightTest()
     {
         assertFalse(left(0).isRight());
-    }
-
-    @Test
-    public void isRightTestRight()
-    {
         assertTrue(right(0).isRight());
     }
 
     @Test
-    public void matchTestProducingLeft()
+    public void matchTestProducing()
     {
         assertTrue(left(0).matchThen(
                 l -> l == 0,
                 r -> false)
         );
-    }
-
-    @Test
-    public void matchTestProducingRight()
-    {
         assertTrue(right(0).matchThen(
                 l -> false,
                 r -> r == 0)
@@ -175,8 +148,8 @@ public class EitherTest
 
         left(true).match(
                 l -> changed.set(l),
-                r -> {}
-                );
+                Combinators::noop
+        );
 
         assertTrue(changed.get());
     }
@@ -187,7 +160,7 @@ public class EitherTest
         final AtomicBoolean changed = new AtomicBoolean(false);
 
         right(true).match(
-                l -> {},
+                Combinators::noop,
                 r -> changed.set(r)
         );
 
@@ -199,23 +172,23 @@ public class EitherTest
     {
         assertTrue(left(0).unsafeMatchThen(
                 l -> l == 0,
-                r -> {throw new AssertionFailedError("Wrong branch taken");}
+                r -> toss(error)
         ));
     }
 
     @Test(expected = IOException.class)
     public void unsafeMatchTestProducingLeftError() throws IOException
     {
-        ThrowingFunction<Integer, ?, IOException> left = l -> { throw new IOException("This is the right path"); };
-        ThrowingFunction<Object, ?, IOException> right = r -> { throw new AssertionFailedError("Wrong branch taken"); };
-        left(0).unsafeMatchThen(left, right);
+        left(0).<Integer, IOException>unsafeMatchThen(
+                l -> toss(expected),
+                r -> toss(error));
     }
 
     @Test
     public void unsafeMatchTestProducingRight()
     {
         assertTrue(right(0).unsafeMatchThen(
-                l -> {throw new AssertionFailedError("Wrong branch taken");},
+                l -> toss(error),
                 r -> r == 0
         ));
     }
@@ -223,9 +196,10 @@ public class EitherTest
     @Test(expected = IOException.class)
     public void unsafeMatchTestProducingRightError() throws IOException
     {
-        ThrowingFunction<Object, ?, IOException> left = l -> { throw new AssertionFailedError("Wrong branch taken"); };
-        ThrowingFunction<Integer, ?, IOException> right = r -> { throw new IOException("This is the right path"); };
-        right(0).unsafeMatchThen(left, right);
+        right(0).<Integer, IOException>unsafeMatchThen(
+                l -> toss(error),
+                r -> toss(expected)
+        );
     }
 
     @Test
@@ -233,12 +207,9 @@ public class EitherTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
 
-        ThrowingConsumer<Boolean, IOException> left = l -> changed.set(l);
-        ThrowingConsumer<Object, IOException> right = r -> { throw new AssertionFailedError("Wrong branch taken"); };
-
         left(true).unsafeMatch(
-                left,
-                right
+                l -> changed.set(l),
+                r -> toss(error)
         );
 
         assertTrue(changed.get());
@@ -247,23 +218,19 @@ public class EitherTest
     @Test(expected = IOException.class)
     public void unsafeMatchTestVoidLeftError() throws IOException
     {
-        ThrowingFunction<Integer, ?, IOException> left = l -> { throw new IOException("This is the right path"); };
-        ThrowingFunction<Object, ?, IOException> right = r -> { throw new AssertionFailedError("Wrong branch taken"); };
-        left(0).unsafeMatchThen(left, right);
+        left(0).<Integer, IOException>unsafeMatchThen(
+                l -> toss(expected),
+                r -> toss(error));
     }
 
     @Test
-    public void unsafeMatchTestVoidRight() throws IOException
+    public void unsafeMatchTestVoidRight()
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
 
-        ThrowingConsumer<Object, IOException> left = l -> { throw new AssertionFailedError("Wrong branch taken"); };
-        ThrowingConsumer<Boolean, IOException> right = r -> changed.set(r);
-
         right(true).unsafeMatch(
-                left,
-                right
-        );
+                l -> toss(error),
+                r -> changed.set(r));
 
         assertTrue(changed.get());
     }
@@ -271,9 +238,34 @@ public class EitherTest
     @Test(expected = IOException.class)
     public void unsafeMatchTestVoidRightError() throws IOException
     {
-        ThrowingFunction<Object, ?, IOException> left = l -> { throw new AssertionFailedError("Wrong branch taken"); };
-        ThrowingFunction<Integer, ?, IOException> right = r -> { throw new IOException("This is the right path"); };
-        right(0).unsafeMatchThen(left, right);
+        right(0).<Integer, IOException>unsafeMatchThen(
+                l -> toss(error),
+                r -> toss(expected));
+    }
+
+    @Test
+    public void collapseTestProducing()
+    {
+        assertEquals(
+                ((Integer)1).toString(),
+                left(1).collapseThen(Object::toString));
+        assertEquals(
+                ((Boolean)false).toString(),
+                right(false).collapseThen(Object::toString));
+    }
+
+    @Test
+    public void collapseTest()
+    {
+        left(1).collapse(o -> assertEquals(1, o));
+        right(true).collapse(o -> assertEquals(true, o));
+    }
+
+    @Test
+    public void flipTest()
+    {
+        assertEquals(right(1), left(1).flip());
+        assertEquals(left(1), right(1).flip());
     }
 
     @Test

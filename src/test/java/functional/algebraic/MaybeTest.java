@@ -31,18 +31,22 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static functional.algebraic.Maybe.*;
+import static functional.combinator.Combinators.toss;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class MaybeTest
 {
+    public static Error error = new AssertionError("Wrong branch taken");
+    public static IOException expected = new IOException("This is the right branch");
+
     @Test
     public void bindTestJust()
     {
         int x = 0;
         Function<Integer, Maybe<Integer>> f = i -> just(i + 1);
 
-        assertEquals(just(x).andThen(f), f.apply(x));
+        assertEquals(f.apply(x), just(x).andThen(f));
         assertTrue(just(x).andThen(f).isJust());
     }
 
@@ -52,8 +56,8 @@ public class MaybeTest
         int x = 0;
         Function<Object, Maybe<Object>> f = i -> nothing();
 
-        assertEquals(just(x).andThen(f), f.apply(x));
-        assertEquals(just(x).andThen(f), nothing());
+        assertEquals(f.apply(x), just(x).andThen(f));
+        assertEquals(nothing(), just(x).andThen(f));
     }
 
     @Test
@@ -62,7 +66,7 @@ public class MaybeTest
         Function<Integer, Maybe<Integer>> g = i -> just(i + 1);
 
         Maybe<Integer> nothing = Maybe.nothing();
-        assertEquals(nothing.andThen(g), nothing());
+        assertEquals(nothing(), nothing.andThen(g));
     }
 
     @Test
@@ -85,6 +89,28 @@ public class MaybeTest
     }
 
     @Test
+    public void orElseTest()
+    {
+        assertEquals(
+                true,
+                just(true).orElse(false));
+        assertEquals(
+                false,
+                nothing().orElse(false));
+    }
+
+    @Test
+    public void consumeTest()
+    {
+        final AtomicBoolean changed = new AtomicBoolean(false);
+
+        just(true).consume(v -> changed.set(v));
+        nothing().consume(v -> toss(error));
+
+        assertTrue(changed.get());
+    }
+
+    @Test
     public void isJustTest()
     {
         assertTrue(just(0).isJust());
@@ -92,21 +118,20 @@ public class MaybeTest
     }
 
     @Test
-    public void mapTestJust()
+    public void mapTest()
     {
         Function<Integer, Integer> f = x -> x + 1;
+
         int x = 0;
-
-        assertEquals(just(x).map(f), just(f.apply(x)));
-    }
-
-    @Test
-    public void mapTestNothing()
-    {
-        Function<Integer, Integer> f = x -> x + 1;
         Maybe<Integer> nothing = nothing();
 
-        assertEquals(nothing.map(f), nothing);
+        assertEquals(
+                just(f.apply(x)),
+                just(x).map(f));
+
+        assertEquals(
+                nothing,
+                nothing.map(f));
     }
 
     @Test
@@ -132,8 +157,8 @@ public class MaybeTest
     public void matchTestVoidJust()
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        Consumer<Boolean> some = b -> changed.set(b);
-        Runnable none = () -> {};
+        Consumer<Boolean> some = changed::set;
+        Runnable none = () -> toss(error);
 
         just(true).match(some, none);
         assertTrue(changed.get());
@@ -143,7 +168,7 @@ public class MaybeTest
     public void matchTestVoidNothing()
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        Consumer<Integer> some = i -> {};
+        Consumer<Integer> some = i -> toss(error);
         Runnable none = () -> changed.set(true);
         Maybe<Integer> nothing = nothing();
 
@@ -154,53 +179,53 @@ public class MaybeTest
     @Test
     public void ofTestNullable()
     {
-        assertEquals(Maybe.of((Integer)null), nothing());
-        assertEquals(Maybe.of(0), just(0));
+        assertEquals(nothing(), Maybe.of((Integer)null));
+        assertEquals(just(0), Maybe.of(0));
     }
 
     @Test
     public void ofTestOptional()
     {
-        assertEquals(Maybe.of(Optional.empty()), nothing());
-        assertEquals(Maybe.of(Optional.of(0)), just(0));
+        assertEquals(nothing(), Maybe.of(Optional.empty()));
+        assertEquals(just(0), Maybe.of(Optional.of(0)));
     }
 
     @Test
     public void unsafeMatchTestProducingJust() throws IOException
     {
         ThrowingFunction<Integer, Boolean, IOException> some = i -> true;
-        ThrowingSupplier<Boolean, IOException> none = () -> {throw new AssertionError("Wrong branch taken");};
+        ThrowingSupplier<Boolean, IOException> none = () -> toss(error);
 
-        assertTrue(just(0).unsafeMatch(some, none));
+        assertTrue(just(0).unsafeMatchThen(some, none));
     }
 
     @Test(expected = IOException.class)
     public void unsafeMatchTestProducingJustError() throws IOException
     {
-        ThrowingFunction<Integer, ?, IOException> some = i -> {throw new IOException("This is the right path");};
-        ThrowingSupplier<?, IOException> none = () -> {throw new AssertionError("Wrong branch taken");};
+        ThrowingFunction<Integer, ?, IOException> some = i -> toss(expected);
+        ThrowingSupplier<?, IOException> none = () -> toss(error);
 
-        just(0).unsafeMatch(some, none);
+        just(0).unsafeMatchThen(some, none);
     }
 
     @Test
     public void unsafeMatchTestProducingNothing() throws IOException
     {
-        ThrowingFunction<Integer, Boolean, IOException> some= i -> {throw new AssertionError("Wrong branch taken");};
+        ThrowingFunction<Integer, Boolean, IOException> some= i -> toss(error);
         ThrowingSupplier<Boolean, IOException> none = () -> false;
         Maybe<Integer> nothing = nothing();
 
-        assertFalse(nothing.unsafeMatch(some, none));
+        assertFalse(nothing.unsafeMatchThen(some, none));
     }
 
     @Test(expected = IOException.class)
     public void unsafeMatchTestProducingNothingError() throws IOException
     {
-        ThrowingFunction<Integer, ?, IOException> some = i -> {throw new AssertionError("Wrong branch taken");};
-        ThrowingSupplier<?, IOException> none = () -> {throw new IOException("This is the right path");};
+        ThrowingFunction<Integer, ?, IOException> some = i -> toss(error);
+        ThrowingSupplier<?, IOException> none = () -> toss(expected);
         Maybe<Integer> nothing = nothing();
 
-        nothing.unsafeMatch(some, none);
+        nothing.unsafeMatchThen(some, none);
     }
 
     @Test
@@ -208,7 +233,7 @@ public class MaybeTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
         ThrowingConsumer<Boolean, IOException> some = b -> changed.set(b);
-        ThrowingRunnable<IOException> none = () -> {throw new AssertionError("Wrong branch taken");};
+        ThrowingRunnable<IOException> none = () -> toss(error);
 
         just(true).unsafeMatch(some, none);
         assertTrue(changed.get());
@@ -217,8 +242,8 @@ public class MaybeTest
     @Test(expected = IOException.class)
     public void unsafeMatchTestVoidJustError() throws IOException
     {
-        ThrowingConsumer<Integer, IOException> some = i -> {throw new IOException("This is the right path");};
-        ThrowingRunnable<IOException> none = () -> {throw new AssertionError("Wrong branch taken");};
+        ThrowingConsumer<Integer, IOException> some = i -> toss(expected);
+        ThrowingRunnable<IOException> none = () -> toss(error);
 
         just(0).unsafeMatch(some, none);
     }
@@ -227,7 +252,7 @@ public class MaybeTest
     public void unsafeMatchTestVoidNothing() throws IOException
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        ThrowingConsumer<Integer, IOException> some = i -> {throw new AssertionError("Wrong branch taken");};
+        ThrowingConsumer<Integer, IOException> some = i -> toss(error);
         ThrowingRunnable<IOException> none = () -> changed.set(true);
         Maybe<Integer> nothing = nothing();
 
@@ -238,8 +263,8 @@ public class MaybeTest
     @Test(expected = IOException.class)
     public void unsafeMatchTestVoidNothingError() throws IOException
     {
-        ThrowingConsumer<Integer, IOException> some = i -> {throw new AssertionError("Wrong branch taken");};
-        ThrowingRunnable<IOException> none = () -> {throw new IOException("This is the right path");};
+        ThrowingConsumer<Integer, IOException> some = i -> toss(error);
+        ThrowingRunnable<IOException> none = () -> toss(expected);
         Maybe<Integer> nothing = nothing();
 
         nothing.unsafeMatch(some, none);

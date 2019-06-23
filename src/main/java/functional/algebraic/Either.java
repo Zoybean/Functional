@@ -104,16 +104,27 @@ public abstract class Either<L, R>
                 rf::accept);
     }
 
+    /**
+     * Applies a consumer that can take any Object to whichever value is contained.
+     *
+     * @param f the consumer to apply
+     */
+    public void collapse(Consumer<Object> f)
+    {
+        match(f, f);
+    }
 
     /**
      * Applies a function that can take any Object to whichever value is contained.
      *
-     * @param f the function to apply
+     * @param f   the function to apply
+     * @param <T> the function's return type
+     * @return the result of applying the function to the contained value
      */
-    public void collapse(Consumer<Object> f) {
-        match(f, f);
+    public <T> T collapseThen(Function<Object,T> f)
+    {
+        return matchThen(f, f);
     }
-
 
     /**
      * <p>Apply a function to the contained value, and return an {@link Either} corresponding to the return types.

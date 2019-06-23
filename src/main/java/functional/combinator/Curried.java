@@ -17,12 +17,15 @@
 
 package functional.combinator;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 public final class Curried
 {
+    /**
+     * Prevent construction of this class.
+     */
+    private Curried(){}
+
     public static <A, B> Function<B, A> constant(A a)
     {
         return Curried.<A, B, A>curry(Combinators::<A,B>constant).apply(a);
@@ -46,6 +49,16 @@ public final class Curried
     public static <A, B, C> Function<A, Function<B, C>> curry(BiFunction<A, B, C> f)
     {
         return (A a) -> (B b) -> f.apply(a, b);
+    }
+
+    public static <A, B> Consumer<B> curryWith(BiConsumer<A, B> f, A a)
+    {
+        return (B b) -> f.accept(a, b);
+    }
+
+    public static <A, B> Function<A, Consumer<B>> curry(BiConsumer<A, B> f)
+    {
+        return (A a) -> (B b) -> f.accept(a, b);
     }
 
     public static <A, B, C> Function<B, C> curryWith(BiFunction<A, B, C> f, A a)
