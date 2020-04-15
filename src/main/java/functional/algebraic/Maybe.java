@@ -230,9 +230,9 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @return A Maybe mirroring the Optional parameter
      * @param <V> The type of the optional value
      */
-    public static <V> Maybe<V> of(Optional<V> value)
+    public static <V> Maybe<V> of(Optional<? extends V> value)
     {
-        return value.map(Maybe::just).orElse(nothing());
+        return cast(value.map(Maybe::just).orElse(nothing()));
     }
 
     /**
@@ -267,15 +267,14 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * Upcast the container by upcasting the contained type.
      *
      * @param m   The Maybe to cast
-     * @param <T> The type to cast to
-     * @param <V> The type to cast from
+     * @param <V> The type to cast to
      * @return A Maybe of the upcast type
      */
-    static <T, V extends T> Maybe<T> cast(Maybe<V> m)
+    static <V> Maybe<V> cast(Maybe<? extends V> m)
     {
         return m.matchThen(
-                (T value) -> just(value),
-                () -> nothing()
+                Maybe::just,
+                Maybe::nothing
         );
     }
 
@@ -370,7 +369,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         {
             if (o instanceof Just)
             {
-                Just j = (Just) o;
+                Just<?> j = (Just<?>) o;
                 return Objects.equals(value, j.value);
             }
             return false;

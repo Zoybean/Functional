@@ -47,7 +47,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     /**
      * The Either type used internally to hold the alternative values.
      */
-    private Either<E, V> either;
+    private final Either<E, V> either;
 
     /**
      * Constructor.
@@ -211,10 +211,10 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <V> The value alternative type.
      * @return
      */
-    public static <V, E extends Exception> Result<Maybe<V>, E> transpose(Maybe<Result<V, E>> m)
+    public static <V, E extends Exception> Result<Maybe<V>, E> transpose(Maybe<? extends Result<? extends V, ? extends E>> m)
     {
         return m.matchThen(
-                (Result<V, E> r) -> r.matchThen(
+                (Result<? extends V, ? extends E> r) -> r.matchThen(
                         (V v) -> value(Maybe.just(v)),
                         (E e) -> error(e)
                 ),
@@ -229,10 +229,10 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <V> The value alternative type.
      * @return
      */
-    public static <V, E extends Exception> Maybe<Result<V, E>> transpose(Result<Maybe<V>, E> r)
+    public static <V, E extends Exception> Maybe<Result<V, E>> transpose(Result<? extends Maybe<? extends V>, ? extends E> r)
     {
         return r.matchThen(
-                (Maybe<V> m) -> m.matchThen(
+                (Maybe<? extends V> m) -> m.matchThen(
                         (V v) -> Maybe.just(value(v)),
                         () -> Maybe.nothing()
                 ),
@@ -338,7 +338,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <T> the function's return type
      * @return the result of applying the function to the contained value
      */
-    public <T> T collapseThen(Function<Object, T> f)
+    public <T> T collapseThen(Function<Object, ? extends T> f)
     {
         return either.collapseThen(f);
     }
@@ -581,15 +581,14 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     /**
      * Apply the function to the contained value and the supplied value, if present, and return the modified Result.
      *
-     * @param f   The bifunction to apply to the contained value
+     * @param f The bifunction to apply to the contained value
      * @return The modified Result.
      */
-    public <U,R> Result<R, E> bimap(Result<U, E> r, BiFunction<? super V, ? super U, ? extends R> f)
+    public <U,R> Result<R, E> bimap(Result<? extends U, ? extends E> r, BiFunction<? super V, ? super U, ? extends R> f)
     {
         return andThen(
-                (V v) -> r.andThen(
-                        (U u) -> value(
-                                f.apply(v, u))));
+                (V v) -> r.map((Function<U, R>)
+                            (U u) -> f.apply(v, u)));
     }
 
     /**
@@ -623,7 +622,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     {
         if (o instanceof Result)
         {
-            Result r = (Result) o;
+            Result<?,?> r = (Result<?,?>) o;
             return either.equals(r.either);
         }
         return false;

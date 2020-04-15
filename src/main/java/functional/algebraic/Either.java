@@ -121,7 +121,7 @@ public abstract class Either<L, R>
      * @param <T> the function's return type
      * @return the result of applying the function to the contained value
      */
-    public <T> T collapseThen(Function<Object,T> f)
+    public <T> T collapseThen(Function<Object, ? extends T> f)
     {
         return matchThen(f, f);
     }
@@ -181,7 +181,7 @@ public abstract class Either<L, R>
      *
      * @param lf The operation to optionally perform.
      */
-    public void ifLeft(Consumer<L> lf)
+    public void ifLeft(Consumer<? super L> lf)
     {
         match(
                 lf,
@@ -194,7 +194,7 @@ public abstract class Either<L, R>
      *
      * @param rf The operation to optionally perform.
      */
-    public void ifRight(Consumer<R> rf)
+    public void ifRight(Consumer<? super R> rf)
     {
         match(
                 (L l) -> {},
@@ -235,8 +235,8 @@ public abstract class Either<L, R>
     public Either<R, L> flip()
     {
         return matchThen(
-                (L l) -> right(l),
-                (R r) -> left(r)
+                Either::right,
+                Either::left
         );
     }
 
@@ -277,8 +277,8 @@ public abstract class Either<L, R>
     static <L, R> Either<L, R> cast(Either<? extends L, ? extends R> either)
     {
         return either.matchThen(
-                (L l) -> left(l),
-                (R r) -> right(r)
+                Either::left,
+                Either::right
         );
     }
 
@@ -316,13 +316,10 @@ public abstract class Either<L, R>
         {
             if (o instanceof Left)
             {
-                Left l = (Left) o;
+                Left<?, ?> l = (Left<?, ?>) o;
                 return Objects.equals(value, l.value);
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         @Override
@@ -378,7 +375,7 @@ public abstract class Either<L, R>
         {
             if (o instanceof Right)
             {
-                Right r = (Right) o;
+                Right<?, ?> r = (Right<?, ?>) o;
                 return Objects.equals(value, r.value);
             }
             return false;
