@@ -23,7 +23,9 @@ import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -42,7 +44,7 @@ import java.util.function.Supplier;
  * @author Zoey Hewll
  * @author Eleanor McMurtry
  */
-public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
+public class Result<V, E extends Exception> implements Iterable<V>
 {
     /**
      * The Either type used internally to hold the alternative values.
@@ -65,9 +67,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * If the operation succeeds, the Result will contain the returned value.<br>
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
-     * <p>Conceptually the inverse of {@link #get}:<br>
+     * <p>Conceptually the inverse of {@link #unwrap}:<br>
      * {@code r <==> of(r::get)}<br>
-     * {@code f.get() <==> of(f).get()}<br>
+     * {@code f.get() <==> of(f).unwrap()}<br>
      *
      * @param f   the operation to perform
      * @param <E> the type of checked exception which may be thrown
@@ -78,17 +80,18 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     {
         try
         {
-            return value(f.get());
+            return ok(f.get());
         }
-        catch (RuntimeException e)
+        catch (RuntimeException re)
         {
             // This ensures that only checked exceptions are caught by the following clause.
-            throw e;
+            throw re;
         }
         catch (Exception e)
         {
+            // Because we already caught all the runtime exceptions, we know that the only possible thing left to catch is E
             @SuppressWarnings("unchecked") final E ex = (E) e;
-            return error(ex);
+            return err(ex);
         }
     }
 
@@ -97,9 +100,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * If the operation succeeds, the Result will contain nothing (Void).
      * If the operation fails, the Result will contain the thrown checked exception.
      * <p>
-     * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> of(r::get)}<br>
-     * {@code f.run() <~~> of(f).get()}<br>
+     * <p>Conceptually the inverse of {@link #unwrap}.
+     * {@code r <==> of(r::unwrap)}<br>
+     * {@code f.run() <~~> of(f).unwrap()}<br>
      *
      * @param v   the operation to perform
      * @param <E> the type of checked exception which may be thrown
@@ -115,9 +118,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * If the operation succeeds, the Result will contain the returned value.
      * If the operation fails, the Result will contain the thrown runtime exception.
      * <p>
-     * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> ofRuntime(r.get())}<br>
-     * {@code f.get() <==> ofRuntime(f).get()}<br>
+     * <p>Conceptually the inverse of {@link #unwrap}.
+     * {@code r <==> ofRuntime(r::unwrap)}<br>
+     * {@code f.get() <==> ofRuntime(f).unwrap()}<br>
      *
      * @param v   the operation to perform
      * @param <V> the type of value which may be returned
@@ -127,11 +130,11 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     {
         try
         {
-            return value(v.get());
+            return ok(v.get());
         }
         catch (RuntimeException e)
         {
-            return error(e);
+            return err(e);
         }
     }
 
@@ -140,9 +143,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * If the operation succeeds, the Result will contain nothing (Void).
      * If the operation fails, the Result will contain the thrown runtime exception.
      * <p>
-     * <p>Conceptually the inverse of {@link #get}.
-     * {@code r <==> ofRuntime(r.get())}<br>
-     * {@code f() <==> ofRuntime(f).get()}<br>
+     * <p>Conceptually the inverse of {@link #unwrap}.
+     * {@code r <==> ofRuntime(r::unwrap)}<br>
+     * {@code f.run() <==> ofRuntime(f).unwrap()}<br>
      *
      * @param v the operation to perform
      * @return A Result representing the outcome of the operation.
@@ -205,27 +208,26 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     }
 
     /**
-     * Transposes a Maybe of a Result into a Result of a Maybe.
-     * @param m   A maybe of a result.
+     * Transposes an Option of a Result into a Result of an Option.
+     * @param m   an Option of a result.
      * @param <E> The error alternative type.
      * @param <V> The value alternative type.
      * @return
      */
-    public static <V, E extends Exception> Result<Option<V>, E> transpose(
-            Option<? extends Result<? extends V, ? extends E>> m)
+    public static <V, E extends Exception> Result<Option<V>, E> transpose(Option<? extends Result<? extends V, ? extends E>> m)
     {
         return m.matchThen(
                 (Result<? extends V, ? extends E> r) -> r.matchThen(
-                        (V v) -> value(Option.just(v)),
-                        (E e) -> error(e)
+                        (V v) -> ok(Option.some(v)),
+                        (E e) -> err(e)
                 ),
-                () -> value(Option.nothing())
+                () -> ok(Option.none())
         );
     }
 
     /**
-     * Transposes a Result of a Maybe into a Maybe of a Result.
-     * @param r   A result of a maybe.
+     * Transposes a Result of an Option into an Option of a Result.
+     * @param r   A result of an Option.
      * @param <E> The error alternative type.
      * @param <V> The value alternative type.
      * @return
@@ -234,10 +236,10 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     {
         return r.matchThen(
                 (Option<? extends V> m) -> m.matchThen(
-                        (V v) -> Option.just(value(v)),
-                        () -> Option.nothing()
+                        (V v) -> Option.some(ok(v)),
+                        () -> Option.none()
                 ),
-                (E e) -> Option.just(error(e))
+                (E e) -> Option.some(err(e))
         );
     }
 
@@ -253,7 +255,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     {
         return cast(r.matchThen(
                 Combinators::id,
-                Result::error
+                Result::err
         ));
     }
 
@@ -265,7 +267,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <V> The unused value type
      * @return A Result containing the provided exception.
      */
-    public static <V, E extends Exception> Result<V, E> error(E e)
+    public static <V, E extends Exception> Result<V, E> err(E e)
     {
         return new Result<>(Either.left(e));
     }
@@ -278,7 +280,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <V> The type of the contained value
      * @return A Result containing the provided exception.
      */
-    public static <V, E extends Exception> Result<V, E> value(V v)
+    public static <V, E extends Exception> Result<V, E> ok(V v)
     {
         return new Result<>(Either.right(v));
     }
@@ -300,8 +302,8 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * Match on the result, applying the function pertaining to the contained type, and returning the result.
      * Both functions must return the same type.
      *
-     * @param vf  The function to apply to the result if it is a {@link #value}.
-     * @param ef  The function to apply to the result if it is an {@link #error}.
+     * @param vf  The function to apply to the result if it is a {@link #ok}.
+     * @param ef  The function to apply to the result if it is an {@link #err}.
      * @param <T> The return type of the functions.
      * @return The value returned by the matched function.
      */
@@ -313,8 +315,8 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     /**
      * Match on the result, performing the operation pertaining to the contained type.
      *
-     * @param vf The operation to perform if the result is a {@link #value}.
-     * @param ef The operation to perform if the result is an {@link #error}.
+     * @param vf The operation to perform if the result is a {@link #ok}.
+     * @param ef The operation to perform if the result is an {@link #err}.
      */
     public void match(Consumer<? super V> vf, Consumer<? super E> ef)
     {
@@ -323,17 +325,18 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
 
     /**
      * Applies a function that can take any Object to both the error and the result.
-     * Useful for e.g. Systemm.out::println.
+     * Useful for e.g. System.out::println.
      *
      * @param f the function to apply
      */
-    public void collapse(Consumer<Object> f) {
-        either.collapse(f);
+    public void collapse(Consumer<Object> f)
+    {
+        Either.collapse(either, f);
     }
 
     /**
      * Applies a function that can take any Object to both the error and the result.
-     * Useful for e.g. Systemm.out::println.
+     * Useful for e.g. System.out::println.
      *
      * @param f   the function to apply
      * @param <T> the function's return type
@@ -341,7 +344,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      */
     public <T> T collapseThen(Function<Object, ? extends T> f)
     {
-        return either.collapseThen(f);
+        return Either.collapseThen(either, f);
     }
 
     /**
@@ -350,7 +353,8 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param defaultValue the default value
      * @return the value or default
      */
-    public V orElse(V defaultValue) {
+    public V orElse(V defaultValue)
+    {
         return either.matchThen(
             __ -> defaultValue,
             val -> val
@@ -401,7 +405,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @return
      * @param <T> The supplier's return type
      */
-    public <T> Result<T, E> and(Supplier<? extends Result<? extends T, ? extends E>> f)
+    public <T> Result<T, E> andGet(Supplier<? extends Result<? extends T, ? extends E>> f)
     {
         return andThen((__) -> f.get());
     }
@@ -413,9 +417,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @return
      * @param <T> The supplier's return type
      */
-    public <T> Result<T, E> andT(ThrowingSupplier<? extends T, ? extends E> f)
+    public <T> Result<T, E> andGetT(ThrowingSupplier<? extends T, ? extends E> f)
     {
-        return and(convertSupplier(f));
+        return andGet(convertSupplier(f));
     }
 
     /**
@@ -427,9 +431,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param f
      * @return
      */
-    public Result<Void, E> andT(ThrowingRunnable<? extends E> f)
+    public Result<Void, E> andDoT(ThrowingRunnable<? extends E> f)
     {
-        return and(convertRunnable(f));
+        return andGet(convertRunnable(f));
     }
 
     /**
@@ -439,10 +443,10 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @return
      * @param <F> The supplier's error type
      */
-    public <F extends Exception> Result<V, F> or(Supplier<? extends Result<? extends V, ? extends F>> r)
+    public <F extends Exception> Result<V, F> orGet(Supplier<? extends Result<? extends V, ? extends F>> r)
     {
         return matchThen(
-                (V v) -> value(v),
+                (V v) -> ok(v),
                 (E e) -> cast(r.get())
         );
     }
@@ -452,8 +456,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <F>
      * @return
      */
-    public <F extends Exception> Result<V, F> or(Result<? extends V, ? extends F> r) {
-        return or(() -> r);
+    public <F extends Exception> Result<V, F> or(Result<? extends V, ? extends F> r)
+    {
+        return orGet(() -> r);
     }
 
     /**
@@ -463,9 +468,9 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @return
      * @param <F> The supplier's error type
      */
-    public <F extends Exception> Result<V, F> orT(ThrowingSupplier<? extends V, ? extends F> f)
+    public <F extends Exception> Result<V, F> orGetT(ThrowingSupplier<? extends V, ? extends F> f)
     {
-        return or(convertSupplier(f));
+        return orGet(convertSupplier(f));
     }
 
     /**
@@ -473,7 +478,8 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param op the operation
      * @return the unaltered Result
      */
-    public Result<V, E> ifOk(Consumer<? super V> op) {
+    public Result<V, E> ifOk(Consumer<? super V> op)
+    {
         match(op, Combinators::noop);
         return this;
     }
@@ -483,36 +489,10 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param op the operation
      * @return the unaltered Result
      */
-    public Result<V, E> ifErr(Consumer<? super E> op) {
+    public Result<V, E> ifErr(Consumer<? super E> op)
+    {
         match(Combinators::noop, op);
         return this;
-    }
-
-
-    /**
-     * Apply the given function to the contained value and discard the Result's value,
-     * returning {@code this} if there was no error, otherwise the resulting error.
-     * <p>
-     * Equivalent to haskell {@code (this <*) . (this >>=)}
-     *
-     * @param f the function to apply
-     * @return
-     */
-    public Result<V, E> peek(Function<? super V, ? extends Result<Void, ? extends E>> f)
-    {
-        return andThen((V v) -> f.apply(v).set(v));
-    }
-
-    /**
-     * Apply the given consumer to the contained value and discard the returned value,
-     * returning {@code this} if there was no error, otherwise the resulting error.
-
-     * @param f the consumer to apply
-     * @return
-     */
-    public Result<V, E> peekT(ThrowingConsumer<? super V, ? extends E> f)
-    {
-        return peek(convertConsumer(f));
     }
 
     /**
@@ -524,19 +504,7 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      */
     public <T> Result<T, E> and(Result<? extends T, ? extends E> value)
     {
-        return and(() -> value);
-    }
-
-    /**
-     * Equivalent to haskell {@code (this *>) . pure}
-     *
-     * @param value
-     * @return
-     * @param <T> The value type
-     */
-    public <T> Result<T, E> set(T value)
-    {
-        return and(value(value));
+        return andGet(() -> value);
     }
 
     /**
@@ -549,8 +517,8 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     public <T> Result<T, E> map(Function<? super V, ? extends T> f)
     {
         return matchThen(
-                (V v) -> value(f.apply(v)),
-                (E e) -> error(e)
+                (V v) -> ok(f.apply(v)),
+                (E e) -> err(e)
         );
     }
 
@@ -563,8 +531,8 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
     public <F extends Exception> Result<V, F> mapError(Function<? super E, ? extends F> f)
     {
         return matchThen(
-                (V v) -> value(v),
-                (E e) -> error(f.apply(e))
+                (V v) -> ok(v),
+                (E e) -> err(f.apply(e))
         );
     }
 
@@ -598,13 +566,13 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * If it is an exception, throw it.<br>
      *
      * <p>Conceptually the inverse of {@link #of} and {@link #ofRuntime}:<br>
-     * {@code r <==> of(r.get())}<br>
-     * {@code f() <==> of(f()).get()}<br>
+     * {@code r <==> of(r::unwrap)}<br>
+     * {@code f() <==> of(f).run().unwrap()}<br>
      *
      * @return the contained value
      * @throws E the contained exception
      */
-    public V get() throws E
+    public V unwrap() throws E
     {
         return either.unsafeMatchThen(
                 Combinators::toss,
@@ -637,4 +605,10 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
         );
     }
 
+    @NotNull
+    @Override
+    public Iterator<V> iterator()
+    {
+        return either.fromRight().iterator();
+    }
 }

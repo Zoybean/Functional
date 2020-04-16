@@ -22,55 +22,42 @@ import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 import functional.throwing.ThrowingRunnable;
 import functional.throwing.ThrowingSupplier;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * <p>A container which may be empty, or hold a value; and provides pattern matching to safely unwrap the data.
- * <br>
- * <p>The only possible subclasses are {@link Nothing} and {@link Just}.
- * <h3>Examples:</h3>
- * In each example, an underscore (_) represents a placeholder for any valid value, where the specific value doesn't affect the output.
- * <pre> {@code
- * f(x) = y
- * g(x) = just(y);
- * h(x) = nothing();
- *
- * just(x).map(f) == just(y)
- * just(x).map(g) == just(just(y))
- * just(x).andThen(g) == just(y)
- *
- * just(x).map(h) == just(nothing())
- * just(x).andThen(h) == nothing()
- * }
- *
- * Nothing always yields Nothing:
- * {@code
- * nothing().map(_) == nothing()
- * nothing().andThen(_) == nothing()
- * }
- *
- * Matching safely unwraps the data and applies the matched operation:
- * {@code
- * just(x).match(x -> y, _) == y
- * nothing().match(_, () -> z) == z
- * } </pre>
+ * Type Option represents an optional value: every Option is either Some and contains a value, or None, and does not.
+ * Option types have a number of uses:
+ * <p><ul>
+ * <li>    Initial values
+ * <li>    Return values for functions that are not defined over their entire input range (partial functions)
+ * <li>    Return value for otherwise reporting simple errors, where None is returned on error
+ * <li>    Optional fields
+ * <li>    Optional function arguments
+ * <li>    Nullable values
+ * </ul><p>
+ * Options provide a mechanism for pattern matching to query the presence of a value and take action,
+ * always accounting for the None case.
  *
  * @param <V> The type of the optional value
  * @author Zoey Hewll
  * @author Eleanor McMurtry
  */
-public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateException>
+public abstract class Option<V> implements Iterable<V>
 {
     /**
      * Effectively final, singleton instance.
      */
-    private static Nothing<?> NOTHING;
+    private static None<?> NONE;
 
     /**
      * Private constructor to seal the type.
@@ -78,7 +65,7 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     private Option() {}
 
     /**
-     * Decide control flow based on the structure of the Maybe,
+     * Decide control flow based on the structure of this,
      * returning a result or throwing a checked exception.
      *
      * @see #matchThen
@@ -93,10 +80,10 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     public abstract <T, E extends Exception> T unsafeMatchThen(ThrowingFunction<? super V, ? extends T, ? extends E> some, ThrowingSupplier<? extends T, ? extends E> none) throws E;
 
     /**
-     * Decide control flow based on the structure of the Maybe,
+     * Decide control flow based on the structure of this,
      * optionally throwing a checked exception.
      *
-     * @see #matchThen
+     * @see #match
      *
      * @param some the operation to perform on the contained value if there is one
      * @param none the operation to perform if there is no contained value
@@ -106,7 +93,7 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     public abstract <E extends Exception> void unsafeMatch(ThrowingConsumer<? super V, ? extends E> some, ThrowingRunnable<? extends E> none) throws E;
 
     /**
-     * Decide control flow by opening the structure of the Maybe,
+     * Decide control flow by opening the structure of this,
      * returning the result of the chosen branch.
      *
      * @param some the operation to perform on the contained value if there is one
@@ -122,7 +109,7 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     }
 
     /**
-     * Decide control flow based on the structure of the Maybe.
+     * Decide control flow based on the structure of this.
      *
      * @param some the operation to perform on the contained value if there is one
      * @param none the operation to perform if there is no contained value
@@ -135,32 +122,103 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     }
 
     /**
-     * Applies the mapping function if there is a contained value, returning the result in a Maybe.
-     * This is guaranteed to produce a Maybe of the same structure.
+     * Applies the mapping function if there is a contained value, returning the result in an Option.
+     * This is guaranteed to produce an Option of the same structure.
      *
      * @param f   the function to apply to the contained value
      * @param <T> the type of the function's return value
-     * @return the modified Maybe
+     * @return the modified Option
      */
     public abstract <T> Option<T> map(Function<? super V, ? extends T> f);
 
+    public <T> T mapOr(Function<? super V, ? extends T> f, T value)
+    {
+        return mapOrElse(f, () -> value);
+    }
+
+    public <T> T mapOrElse(Function<? super V, ? extends T> f, Supplier<? extends T> s)
+    {
+        // equivalent to map(f).unwrapOrElse(s), but for type reasons java needs it expanded
+        return map(f).matchThen(
+                Combinators::id,
+                s
+        );
+    }
+
     /**
-     * Performs the operation on any contained value and returns the resulting Maybe if there is one.
-     * This can produce a Maybe of a different structure.
+     * Returns None if this is None, otherwise returns o.
+     * @param o the other Option
+     * @return the provided Option if both are present
+     */
+    public abstract Option<V> and(Option<? extends V> o);
+
+    /**
+     * Returns this if it contains a value, otherwise returns o.
+     * @param o the other Option
+     * @return the first present value or none
+     */
+    public abstract Option<V> or(Option<? extends V> o);
+
+
+    /**
+     * Returns this if it is a Some, otherwise computes an option from the given Supplier.
+     * @param s the supplier to compute the other Option
+     * @return the first present value or none
+     */
+    public Option<V> orElse(Supplier<? extends Option<? extends V>> s)
+    {
+        return cast(matchThen(
+                Option::some,
+                s
+        ));
+    }
+
+
+    /**
+     * Returns Some if exactly one of this, o is Some, otherwise returns None.
+     * @param o the other Option
+     * @return the unique present value, or None
+     */
+    public abstract Option<V> xor(Option<? extends V> o);
+
+    /**
+     * Returns None if this is None, otherwise calls f with the wrapped value and returns the result.
+     *
+     * Some languages call this operation flatmap.
      *
      * @param f   the function to apply to the contained value
      * @param <T> the type of the function's optional return value
-     * @return the modified Maybe
+     * @return the returned Option, or None if this is None
      */
     public abstract <T> Option<T> andThen(Function<? super V, ? extends Option<? extends T>> f);
+
+    /**
+     * Returns None if this is None, otherwise calls predicate with the wrapped value and returns:
+     * <p><ul>
+     * <li>    Some(t) if predicate returns true (where t is the wrapped value), and
+     * <li>    None if predicate returns false.
+     * </ul><p>
+     * @param pred the predicate to test against any contained value
+     * @return a Some if this is Some and the value passes the predicate, otherwise None
+     */
+    public Option<V> filter(Predicate<V> pred)
+    {
+        return andThen(
+                v -> pred.test(v)
+                        ? some(v)
+                        : none());
+    }
 
     /**
      * Returns the contained value, if it exists, otherwise raise an exception.
      *
      * @return The contained value, if it exists
-     * @throws IllegalStateException if nothing is contained
+     * @throws NoSuchElementException if nothing is contained
      */
-    public abstract V get() throws IllegalStateException;
+    public V unwrap() throws NoSuchElementException
+    {
+        return expect("called `Option::unwrap()` on a `None` value");
+    }
 
     /**
      * Returns the contained value, or the supplied default if it does not exist.
@@ -168,18 +226,40 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
      * @param value the default value to use
      * @return the contained value, or the supplied default if it does not exist
      */
-    public V orElse(V value)
+    public V unwrapOr(V value)
     {
-        return orElse(() -> value);
+        return unwrapOrElse(() -> value);
     }
 
     /**
-     * Returns the contained value, or the supplied default if it does not exist.
+     * Returns the contained value, if it exists, otherwise raise an exception with the provided message.
+     *
+     * @param message the exception message
+     * @return The contained value, if it exists
+     * @throws NoSuchElementException if nothing is contained
+     */
+    public V expect(String message) throws NoSuchElementException
+    {
+        return expect(new NoSuchElementException(message));
+    }
+
+    /**
+     * Returns the contained value, if it exists, otherwise raise the provided exception.
+     *
+     * @param <T> the type of the exception
+     * @param t the exception to throw
+     * @return the contained value, if it exists
+     * @throws T if nothing is contained
+     */
+    public abstract <T extends Throwable> V expect(T t) throws T;
+
+    /**
+     * Returns the contained value, or computes one if it does not exist.
      *
      * @param supplier the supplier of the value to use
-     * @return the contained value, or the supplied default if it does not exist
+     * @return the contained value, or the computed value if it does not exist
      */
-    public V orElse(Supplier<? extends V> supplier)
+    public V unwrapOrElse(Supplier<? extends V> supplier)
     {
         return matchThen(
                 Combinators::id,
@@ -188,20 +268,36 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     }
 
     /**
-     * Returns true if there is a contained value.
-     *
-     * @return true if there is a contained value
+     * Returns true if this is a Some value.
+     * @return true if this is a Some value, false otherwise
      */
-    public boolean isJust()
+    public boolean isSome()
     {
         return matchThen(
-                (V v) -> true,
-                () -> false
-        );
+                (V __) -> true,
+                () -> false);
     }
 
     /**
-     * Consumes the value inside this Maybe, if there is one.
+     * Returns true if this is a None value.
+     * @return true if this is a None value, false otherwise
+     */
+    public boolean isNone()
+    {
+        return matchThen(
+                (V __) -> false,
+                () -> true);
+    }
+
+    @NotNull
+    @Override
+    public Iterator<V> iterator()
+    {
+        return new OptionIterator();
+    }
+
+    /**
+     * Consumes the value inside this Option, if there is one.
      * @param consumer the consuming operation
      */
     public void consume(Consumer<? super V> consumer)
@@ -210,71 +306,71 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
     }
 
     /**
-     * Converts a nullable value into an equivalent Maybe, returning Nothing if the value is null, and just(value) otherwise.
+     * Converts a nullable value into an equivalent Option, returning None if the value is null, and some(value) otherwise.
      *
      * @param value the value to wrap
-     * @return nothing() if the value is null, and just(value) otherwise
+     * @return none() if the value is null, and some(value) otherwise
      * @param <V> The type of the optional value
      */
     public static <V> Option<V> of(@Nullable V value)
     {
         return value == null
-                ? nothing()
-                : just(value);
+                ? none()
+                : some(value);
     }
 
     /**
-     * Turns an Optional into a Maybe, turning Empty into Nothing, and a present value into just(value).
+     * Turns an Optional into an Option, turning Empty into None, and a present value into some(value).
      *
      * @param value the optional to transform
-     * @return A Maybe mirroring the Optional parameter
+     * @return an Option mirroring the Optional parameter
      * @param <V> The type of the optional value
      */
     public static <V> Option<V> of(Optional<? extends V> value)
     {
-        return cast(value.map(Option::just).orElse(nothing()));
+        return cast(value.map(Option::some).orElse(none()));
     }
 
     /**
-     * Wraps the value in a Maybe.
+     * Wraps the value in an Option.
      *
      * @param value The value to wrap
-     * @param <V>   The type of the containted value
-     * @return The value wrapped in a Maybe
+     * @param <V>   The type of the contained value
+     * @return The value wrapped in an Option
      */
-    public static <V> Option<V> just(V value)
+    public static <V> Option<V> some(V value)
     {
-        return new Just<>(value);
+        return new Some<>(value);
     }
 
     /**
-     * Returns the singleton Nothing instance.
+     * Returns the singleton None instance.
      *
      * @param <V> The type of the non-existent contained value
-     * @return The singleton Nothing instance
+     * @return The singleton None instance
      */
-    public static <V> Option<V> nothing()
+    public static <V> Option<V> none()
     {
-        if (NOTHING == null)
+        if (NONE == null)
         {
-            NOTHING = new Nothing<>();
+            NONE = new None<>();
         }
-        @SuppressWarnings("unchecked") Nothing<V> nothing = (Nothing<V>) NOTHING;
-        return nothing;
+        @SuppressWarnings("unchecked") None<V> none = (None<V>) NONE;
+        return none;
     }
 
     /**
      * Upcast the container by upcasting the contained type.
      *
-     * @param m   The Maybe to cast
+     * @param o   The Option to cast
      * @param <V> The type to cast to
-     * @return A Maybe of the upcast type
+     * @return an Option of the upcast type
      */
-    static <V> Option<V> cast(Option<? extends V> m)
+    static <V> Option<V> cast(Option<? extends V> o)
     {
-        return m.matchThen(
-                Option::just,
-                Option::nothing
+        return o.matchThen(
+                Option::some,
+                Option::none
         );
     }
 
@@ -291,24 +387,24 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
      *
      * @param <V> unused
      */
-    private static class Nothing<V> extends Option<V>
+    private static class None<V> extends Option<V>
     {
         @Override
         public boolean equals(Object o)
         {
-            return o instanceof Nothing;
+            return o instanceof Option.None;
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hashCode(Nothing.class);
+            return Objects.hashCode(None.class);
         }
 
         @Override
         public String toString()
         {
-            return "Maybe.nothing()";
+            return "Option.none()";
         }
 
         @Override
@@ -326,20 +422,38 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
         @Override
         public <T> Option<T> map(Function<? super V, ? extends T> f)
         {
-            return nothing();
+            return none();
+        }
+
+        @Override
+        public Option<V> and(Option<? extends V> o)
+        {
+            return this;
+        }
+
+        @Override
+        public Option<V> or(Option<? extends V> o)
+        {
+            return cast(o);
+        }
+
+        @Override
+        public Option<V> xor(Option<? extends V> o) {
+            return cast(o);
         }
 
         @Override
         public <T> Option<T> andThen(Function<? super V, ? extends Option<? extends T>> f)
         {
-            return nothing();
+            return none();
         }
 
         @Override
-        public V get() throws IllegalStateException
+        public <T extends Throwable> V expect(T t) throws T
         {
-            throw new IllegalStateException();
+            throw t;
         }
+
     }
 
     /**
@@ -347,7 +461,7 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
      *
      * @param <V> The type of the contained value.
      */
-    private static class Just<V> extends Option<V>
+    private static class Some<V> extends Option<V>
     {
         /**
          * The contained value.
@@ -355,11 +469,11 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
         final V value;
 
         /**
-         * Construct a Maybe with the provided value.
+         * Construct an Option with the provided value.
          *
          * @param value The value to wrap.
          */
-        Just(V value)
+        Some(V value)
         {
             this.value = value;
         }
@@ -367,9 +481,9 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
         @Override
         public boolean equals(Object o)
         {
-            if (o instanceof Just)
+            if (o instanceof Option.Some)
             {
-                Just<?> j = (Just<?>) o;
+                Some<?> j = (Some<?>) o;
                 return Objects.equals(value, j.value);
             }
             return false;
@@ -378,13 +492,13 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
         @Override
         public int hashCode()
         {
-            return Objects.hash(Just.class, value);
+            return Objects.hash(Some.class, value);
         }
 
         @Override
         public String toString()
         {
-            return "Maybe.just(" + value + ')';
+            return "Option.some(" + value + ')';
         }
 
         @Override
@@ -402,7 +516,27 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
         @Override
         public <T> Option<T> map(Function<? super V, ? extends T> f)
         {
-            return just(f.apply(value));
+            return some(f.apply(value));
+        }
+
+        @Override
+        public Option<V> and(Option<? extends V> o)
+        {
+            return cast(o);
+        }
+
+        @Override
+        public Option<V> or(Option<? extends V> o)
+        {
+            return this;
+        }
+
+        @Override
+        public Option<V> xor(Option<? extends V> o) {
+            return o.matchThen(
+                    v -> none(),
+                    () -> this
+            );
         }
 
         @Override
@@ -412,9 +546,42 @@ public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateExcep
         }
 
         @Override
-        public V get()
+        public <T extends Throwable> V expect(T t)
         {
             return value;
+        }
+    }
+
+    /**
+     * Iterator for Option values.
+     */
+    private class OptionIterator implements Iterator<V>
+    {
+        /**
+         * The next value if there is one.
+         */
+        Option<V> next;
+
+        /**
+         * Construct an iterator over the enclosing Option.
+         */
+        OptionIterator()
+        {
+            next = Option.this;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return next.isSome();
+        }
+
+        @Override
+        public V next() throws NoSuchElementException
+        {
+            V val = next.unwrap();
+            next = none();
+            return val;
         }
     }
 }

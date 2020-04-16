@@ -17,20 +17,21 @@
 
 package functional.algebraic;
 
+import functional.combinator.Combinators;
 import functional.throwing.ThrowingConsumer;
 import functional.throwing.ThrowingFunction;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * <p>A container which holds a value of one of two types; and provides pattern matching to safely unwrap the data.
- * By convention, the Left constructor is used to hold an error value and the Right constructor is used to hold a correct value.
+ * A container which holds a value of one of two types; and provides pattern matching to safely unwrap the data.
  * <p>
- * <p>The type is sealed with a private constructor to ensure the only subclasses are {@link Left} and {@link Right}.
+ * The type is sealed with a private constructor to ensure the only subclasses are {@link Left} and {@link Right}.
  * <p>
- * <p>Instances of the same structure containing the same data are considered equal.
+ * Instances of the same structure containing the same data are considered equal.
  *
  * @param <L> The left alternative type
  * @param <R> The right alternative type
@@ -105,25 +106,25 @@ public abstract class Either<L, R>
     }
 
     /**
-     * Applies a consumer that can take any Object to whichever value is contained.
+     * Applies a consumer that can take either contained value, to whichever value is contained.
      *
      * @param f the consumer to apply
      */
-    public void collapse(Consumer<Object> f)
+    public static <T, L extends T, R extends T> void collapse(Either<L, R> e, Consumer<? super T> f)
     {
-        match(f, f);
+        e.match(f, f);
     }
 
     /**
-     * Applies a function that can take any Object to whichever value is contained.
+     * Applies a function that can take either contained value, to whichever value is contained.
      *
      * @param f   the function to apply
      * @param <T> the function's return type
      * @return the result of applying the function to the contained value
      */
-    public <T> T collapseThen(Function<Object, ? extends T> f)
+    public static <T, L extends T, R extends T, V> V collapseThen(Either<L, R> e, Function<? super T, ? extends V> f)
     {
-        return matchThen(f, f);
+        return e.matchThen(f, f);
     }
 
     /**
@@ -149,16 +150,101 @@ public abstract class Either<L, R>
     }
 
     /**
+     * Apply a function to the contained value if it is Left, and rewrap the result.
+     *
+     * @param lf  The function to apply to the contained value if it is a {@link Left} value.
+     * @param <A> The type of the {@link Left} function
+     * @return An {@link Either} containing the return value of the matched function
+     */
+    public <A> Either<A, R> mapLeft(Function<? super L, ? extends A> lf)
+    {
+        return bimap(
+                lf,
+                Combinators::id
+        );
+    }
+
+    /**
+     * Apply a function to the contained value if it is Right, and rewrap the result.
+     *
+     * @param rf  The function to apply to the contained value if it is a {@link Right} value.
+     * @param <B> The type of the {@link Right} function
+     * @return An {@link Either} containing the return value of the matched function
+     */
+    public <B> Either<L, B> mapRight(Function<? super R, ? extends B> rf)
+    {
+        return bimap(
+                Combinators::id,
+                rf
+        );
+    }
+
+    public <S> Either<S, R> leftAndThen(Function<? super L, ? extends Either<? extends S, ? extends R>> f)
+    {
+        return matchThen(
+                f.andThen(Either::cast),
+                Either::right
+        );
+    }
+
+    public <S> Either<L, S> rightAndThen(Function<? super R, ? extends Either<? extends L, ? extends S>> f)
+    {
+        return matchThen(
+                Either::left,
+                f.andThen(Either::cast)
+        );
+    }
+
+
+    /**
+     * Returns Some if this is a {@link Left} value, otherwise None.
+     *
+     * @return the contained value if it is a {@link Left} value, otherwise None.
+     */
+    public Option<L> fromLeft()
+    {
+        return matchThen(
+                Option::some,
+                (R r) -> Option.none()
+        );
+    }
+
+    /**
+     * Returns Some if this is a {@link Right} value, otherwise None.
+     *
+     * @return the contained value if it is a {@link Right} value, otherwise None.
+     */
+    public Option<R> fromRight()
+    {
+        return matchThen(
+                (L l) -> Option.none(),
+                Option::some
+        );
+    }
+    /**
      * Returns the contained value if it is a {@link Left} value, otherwise returns the provided value.
      *
      * @param left The default value to use if the contained value is not {@link Left}.
      * @return the contained value if it is a {@link Left} value, otherwise the provided value.
      */
-    public L fromLeft(L left)
+    public L leftOr(L left)
     {
         return matchThen(
                 (L l) -> l,
                 (R r) -> left
+        );
+    }
+    /**
+     * Returns the contained value if it is a {@link Left} value, otherwise returns the provided value.
+     *
+     * @param left The default value to use if the contained value is not {@link Left}.
+     * @return the contained value if it is a {@link Left} value, otherwise the provided value.
+     */
+    public L leftOrElse(Supplier<? extends L> left)
+    {
+        return matchThen(
+                (L l) -> l,
+                (R r) -> left.get()
         );
     }
 
@@ -168,10 +254,24 @@ public abstract class Either<L, R>
      * @param right The default value to use if the contained value is not {@link Right}.
      * @return the contained value if it is a {@link Right} value, otherwise the provided value.
      */
-    public R fromRight(R right)
+    public R rightOr(R right)
     {
         return matchThen(
                 (L l) -> right,
+                (R r) -> r
+        );
+    }
+
+    /**
+     * Returns the contained value if it is a {@link Right} value, otherwise returns the provided value.
+     *
+     * @param right The default value to use if the contained value is not {@link Right}.
+     * @return the contained value if it is a {@link Right} value, otherwise the provided value.
+     */
+    public R rightOrElse(Supplier<? extends R> right)
+    {
+        return matchThen(
+                (L l) -> right.get(),
                 (R r) -> r
         );
     }

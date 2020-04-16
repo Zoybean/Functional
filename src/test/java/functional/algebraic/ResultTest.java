@@ -20,10 +20,13 @@ package functional.algebraic;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static functional.algebraic.Result.*;
+import static functional.algebraic.testutils.TestUtils.assertThrows;
 import static functional.combinator.Combinators.toss;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
@@ -32,7 +35,7 @@ import static org.junit.Assert.assertThat;
 public class ResultTest
 {
     public static IOException expected = new IOException("Expected branch");
-    public static IOException unexpected = new IOException();
+    public static IOException unexpected = new IOException("Wrong branch taken");
     public static RuntimeException expectedRuntime = new RuntimeException("Expected branch");
     public static Error error = new AssertionError("Wrong branch taken");
 
@@ -40,11 +43,11 @@ public class ResultTest
     public void matchTestFunction()
     {
         assertTrue(
-                value(true).matchThen(
+                ok(true).matchThen(
                         v -> v,
                         e -> false));
         assertTrue(
-                error(expected).matchThen(
+                err(expected).matchThen(
                         v -> false,
                         e -> true));
     }
@@ -54,7 +57,7 @@ public class ResultTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
 
-        value(true).match(
+        ok(true).match(
                 changed::set,
                 e -> toss(error));
 
@@ -66,7 +69,7 @@ public class ResultTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
 
-        error(expected).match(
+        err(expected).match(
                 v -> toss(error),
                 e -> changed.set(true));
 
@@ -78,47 +81,47 @@ public class ResultTest
     {
         assertEquals(
                 ((Integer) 1).toString(),
-                value(1).collapseThen(Object::toString));
+                ok(1).collapseThen(Object::toString));
         assertEquals(
                 expected.toString(),
-                error(expected).collapseThen(Object::toString));
+                err(expected).collapseThen(Object::toString));
     }
 
     @Test
     public void collapseTest()
     {
-        value(1).collapse(o -> assertEquals(1, o));
-        error(expected).collapse(o -> assertEquals(expected, o));
+        ok(1).collapse(o -> assertEquals(1, o));
+        err(expected).collapse(o -> assertEquals(expected, o));
     }
 
     @Test
     public void orElseTest()
     {
-        assertEquals((Integer) 1, value(1).orElse(0));
-        assertEquals(0, error(unexpected).orElse(0));
+        assertEquals((Integer) 1, ok(1).orElse(0));
+        assertEquals(0, err(unexpected).orElse(0));
     }
 
     @Test
     public void andThenTest()
     {
         assertEquals(
-                value(true),
-                value(true).andThen(v -> value(v)));
+                ok(true),
+                ok(true).andThen(v -> ok(v)));
         assertEquals(
-                error(expected),
-                error(expected).andThen(v -> value(v)));
+                err(expected),
+                err(expected).andThen(v -> ok(v)));
         assertEquals(
-                error(expected),
-                value(true).andThen(v -> error(expected)));
+                err(expected),
+                ok(true).andThen(v -> err(expected)));
         assertEquals(
-                value(true),
-                value(true).andThenT(v -> v));
+                ok(true),
+                ok(true).andThenT(v -> v));
         assertEquals(
-                error(expected),
-                error(expected).andThenT(v -> v));
+                err(expected),
+                err(expected).andThenT(v -> v));
         assertEquals(
-                error(expected),
-                value(true).andThenT(v -> toss(expected)));
+                err(expected),
+                ok(true).andThenT(v -> toss(expected)));
     }
 
     @Test
@@ -127,75 +130,70 @@ public class ResultTest
         final AtomicBoolean changed = new AtomicBoolean(false);
 
         assertEquals(
-                value(null),
-                value(1).andDoT(v -> changed.set(v == 1)));
+                ok(null),
+                ok(1).andDoT(v -> changed.set(v == 1)));
 
         assertTrue(changed.get());
-    }
-
-    @Test
-    public void andDoTestErrorValue()
-    {
-        assertEquals(
-                error(expected),
-                error(expected).andDoT(v -> toss(error)));
     }
 
     @Test
     public void andDoTestError()
     {
         assertEquals(
-                error(expected),
-                value(1).andDoT(__ -> toss(expected)));
+                err(expected),
+                err(expected).andDoT(v -> toss(error)));
         assertEquals(
-                error(expected),
-                error(expected).andDoT(__ -> toss(unexpected)));
+                err(expected),
+                ok(1).andDoT(__ -> toss(expected)));
+        assertEquals(
+                err(expected),
+                err(expected).andDoT(__ -> toss(unexpected)));
     }
 
     @Test
     public void orTest()
     {
         assertEquals(
-                value(false),
-                value(false).or(value(true)));
+                ok(false),
+                ok(false).or(ok(true)));
         assertEquals(
-                value(false),
-                value(false).or(() -> value(true)));
+                ok(false),
+                ok(false).orGet(() -> ok(true)));
         assertEquals(
-                value(false),
-                value(false).or(error(unexpected)));
+                ok(false),
+                ok(false).or(err(unexpected)));
         assertEquals(
-                value(false),
-                value(false).or(() -> error(unexpected)));
+                ok(false),
+                ok(false).orGet(() -> err(unexpected)));
         assertEquals(
-                value(true),
-                error(unexpected).or(value(true)));
+                ok(true),
+                err(unexpected).or(ok(true)));
         assertEquals(
-                value(true),
-                error(unexpected).or(() -> value(true)));
+                ok(true),
+                err(unexpected).orGet(() -> ok(true)));
         assertEquals(
-                error(expected),
-                error(unexpected).or(error(expected)));
+                err(expected),
+                err(unexpected).or(err(expected)));
         assertEquals(
-                error(expected),
-                error(unexpected).or(() -> error(expected)));
+                err(expected),
+                err(unexpected).orGet(() -> err(expected)));
     }
 
     @Test
     public void orTTest()
     {
         assertEquals(
-                value(false),
-                value(false).orT(() -> true));
+                ok(false),
+                ok(false).orGetT(() -> true));
         assertEquals(
-                value(false),
-                value(false).orT(() -> toss(unexpected)));
+                ok(false),
+                ok(false).orGetT(() -> toss(unexpected)));
         assertEquals(
-                value(true),
-                error(unexpected).orT(() -> true));
+                ok(true),
+                err(unexpected).orGetT(() -> true));
         assertEquals(
-                error(expected),
-                error(unexpected).orT(() -> toss(expected)));
+                err(expected),
+                err(unexpected).orGetT(() -> toss(expected)));
     }
 
     @Test
@@ -204,8 +202,8 @@ public class ResultTest
         final AtomicBoolean changed = new AtomicBoolean(false);
 
         assertEquals(
-                value(true),
-                value(true).ifOk(v -> changed.set(v)));
+                ok(true),
+                ok(true).ifOk(v -> changed.set(v)));
 
         assertTrue(changed.get());
     }
@@ -216,8 +214,8 @@ public class ResultTest
         final AtomicBoolean changed = new AtomicBoolean(false);
 
         assertEquals(
-                error(expected),
-                error(expected).ifOk(v -> changed.set(true)));
+                err(expected),
+                err(expected).ifOk(v -> changed.set(true)));
 
         assertFalse(changed.get());
     }
@@ -228,8 +226,8 @@ public class ResultTest
         final AtomicBoolean changed = new AtomicBoolean(false);
 
         assertEquals(
-                value(true),
-                value(true).ifErr(v -> changed.set(true)));
+                ok(true),
+                ok(true).ifErr(v -> changed.set(true)));
 
         assertFalse(changed.get());
     }
@@ -240,8 +238,8 @@ public class ResultTest
         final AtomicBoolean changed = new AtomicBoolean(false);
 
         assertEquals(
-                error(expected),
-                error(expected).ifErr(v -> changed.set(true)));
+                err(expected),
+                err(expected).ifErr(v -> changed.set(true)));
 
         assertTrue(changed.get());
     }
@@ -250,151 +248,115 @@ public class ResultTest
     public void andTTest()
     {
         assertEquals(
-                value(null),
-                value(false).andT(() -> {}));
+                ok(null),
+                ok(false).andDoT(() -> {}));
         assertEquals(
-                value(true),
-                value(false).andT(() -> true));
+                ok(true),
+                ok(false).andGetT(() -> true));
         assertEquals(
-                error(expected),
-                value(false).andT(() -> toss(expected)));
+                err(expected),
+                ok(false).andGetT(() -> toss(expected)));
         assertEquals(
-                error(expected),
-                error(expected).andT(() -> true));
+                err(expected),
+                err(expected).andGetT(() -> true));
         assertEquals(
-                error(expected),
-                error(expected).andT(() -> toss(unexpected)));
+                err(expected),
+                err(expected).andGetT(() -> toss(unexpected)));
     }
-
-    @Test
-    public void peekTest()
-    {
-        assertEquals(
-                value(false),
-                value(false).peek(b -> value(null)));
-        assertEquals(
-                error(expected),
-                value(false).peek(b -> error(expected)));
-        assertEquals(
-                error(expected),
-                error(expected).peek(b -> value(null)));
-        assertEquals(
-                value(false),
-                value(false).peekT(b -> {}));
-        assertEquals(
-                error(expected),
-                value(false).peekT(b -> toss(expected)));
-        assertEquals(
-                error(expected),
-                error(expected).peekT(o -> {}));
-        assertEquals(
-                error(expected),
-                error(expected).peekT(o -> toss(unexpected)));
-    }
-
     @Test
     public void andTest()
     {
         assertEquals(
-                value(true),
-                value(false).and(() -> value(true)));
+                ok(true),
+                ok(false).and(ok(true)));
         assertEquals(
-                value(true),
-                value(false).and(value(true)));
+                err(expected),
+                ok(false).and(err(expected)));
         assertEquals(
-                error(expected),
-                value(false).and(error(expected)));
+                err(expected),
+                err(expected).and(ok(true)));
         assertEquals(
-                error(expected),
-                value(false).and(() -> error(expected)));
-        assertEquals(
-                error(expected),
-                error(expected).and(value(true)));
-        assertEquals(
-                error(expected),
-                error(expected).and(() -> value(true)));
-        assertEquals(
-                error(expected),
-                error(expected).and(error(unexpected)));
-        assertEquals(
-                error(expected),
-                error(expected).and(() -> error(unexpected)));
+                err(expected),
+                err(expected).and(err(unexpected)));
     }
 
     @Test
-    public void setTest()
+    public void andGetTest()
     {
         assertEquals(
-                value(true),
-                value(false).set(true));
+                ok(true),
+                ok(false).andGet(() -> ok(true)));
         assertEquals(
-                error(expected),
-                error(expected).set(true));
+                err(expected),
+                ok(false).andGet(() -> err(expected)));
+        assertEquals(
+                err(expected),
+                err(expected).andGet(() -> ok(true)));
+        assertEquals(
+                err(expected),
+                err(expected).andGet(() -> err(unexpected)));
     }
 
     @Test
     public void mapTest()
     {
         assertEquals(
-                value(false),
-                value(true).map(t -> !t));
+                ok(false),
+                ok(true).map(t -> !t));
         assertEquals(
-                error(expected),
-                Result.<Boolean, IOException>error(expected).map(t -> !t));
+                err(expected),
+                Result.<Boolean, IOException>err(expected).map(t -> !t));
     }
 
     @Test
     public void mapErrorTest()
     {
         assertEquals(
-                value(true),
-                value(true).mapError(e -> unexpected));
+                ok(true),
+                ok(true).mapError(e -> unexpected));
         assertEquals(
-                error(expected),
-                error(unexpected).mapError(e -> expected));
+                err(expected),
+                err(unexpected).mapError(e -> expected));
     }
 
     @Test
     public void convertErrorTest()
     {
-        assertTrue(value(true).convertError(e -> false));
-        assertTrue(Result.<Boolean, IOException>error(unexpected).convertError(e -> true));
+        assertTrue(ok(true).convertError(e -> false));
+        assertTrue(Result.<Boolean, IOException>err(unexpected).convertError(e -> true));
     }
 
     @Test
     public void bimapTest()
     {
         assertEquals(
-                value(true),
-                value(true).bimap(value(false), (a, b) -> a || b));
+                ok(true),
+                ok(true).bimap(ok(false), (a, b) -> a || b));
         assertEquals(
-                error(expected),
-                value(true).bimap(Result.<Boolean, Exception>error(expected), (a, b) -> a || b));
+                err(expected),
+                ok(true).bimap(Result.<Boolean, Exception>err(expected), (a, b) -> a || b));
         assertEquals(
-                error(expected),
-                Result.<Boolean, IOException>error(expected).bimap(value(false), (a, b) -> a || b));
+                err(expected),
+                Result.<Boolean, IOException>err(expected).bimap(ok(false), (a, b) -> a || b));
     }
 
     @Test
-    public void getTestValue() throws Exception
+    public void unwrapTest() throws Exception
     {
-        assertTrue(value(true).get());
-    }
-
-    @Test(expected = IOException.class)
-    public void getTestError() throws IOException
-    {
-        error(expected).get();
+        assertTrue(ok(true).unwrap());
+        assertThrows(
+                IOException.class,
+                () -> err(expected).unwrap());
     }
 
     @Test
     public void ofTestRunnable()
     {
         assertEquals(
-                value(null),
+                ok(null),
                 of(() -> {}));
         assertEquals(
-                error(expected),
+                err(expected),
                 of(() -> toss(expected)));
     }
 
@@ -402,17 +364,14 @@ public class ResultTest
     public void ofTestSupplier()
     {
         assertEquals(
-                value(true),
+                ok(true),
                 of(() -> true));
         assertEquals(
-                error(expected),
+                err(expected),
                 of(() -> toss(expected)));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void ofTestSupplierRuntime()
-    {
-        of(() -> toss(expectedRuntime));
+        assertThrows(
+                RuntimeException.class, () ->
+                of(() -> toss(expectedRuntime)));
     }
 
     @Test
@@ -420,15 +379,15 @@ public class ResultTest
     {
         assertEquals(
                 ofRuntime(() -> {}),
-                value(null));
+                ok(null));
         assertEquals(
-                error(expectedRuntime),
+                err(expectedRuntime),
                 ofRuntime((Runnable) () -> toss(expectedRuntime)));
         assertEquals(
-                value(true),
+                ok(true),
                 ofRuntime(() -> true));
         assertEquals(
-                error(expectedRuntime),
+                err(expectedRuntime),
                 ofRuntime((Supplier<?>) () -> toss(expectedRuntime)));
     }
 
@@ -436,24 +395,24 @@ public class ResultTest
     public void convertTest()
     {
         assertEquals(
-                value(true),
+                ok(true),
                 convertFunction(t -> t).apply(true));
         assertEquals(
-                error(expected),
+                err(expected),
                 convertConsumer(t -> toss(expected)).apply(true));
     }
 
     @Test
     public void transposeTest()
     {
-        Option<Result<Boolean, Exception>> n  = Option.nothing();
-        Result<Option<Boolean>, Exception> vn = value(Option.nothing());
+        Option<Result<Boolean, Exception>> n = Option.none();
+        Result<Option<Boolean>, Exception> vn = ok(Option.none());
 
-        Option<Result<Boolean, Exception>> jv = Option.just(value(true));
-        Result<Option<Boolean>, Exception> vj = value(Option.just(true));
+        Option<Result<Boolean, Exception>> jv = Option.some(ok(true));
+        Result<Option<Boolean>, Exception> vj = ok(Option.some(true));
 
-        Option<Result<Boolean, Exception>> je = Option.just(error(expected));
-        Result<Option<Boolean>, Exception> e  = error(expected);
+        Option<Result<Boolean, Exception>> je = Option.some(err(expected));
+        Result<Option<Boolean>, Exception> e = err(expected);
 
         assertEquals(n, transpose(vn));
         assertEquals(n, transpose(transpose(n)));
@@ -469,39 +428,50 @@ public class ResultTest
     public void joinTest()
     {
         assertEquals(
-                value(true),
-                join(value(value(true))));
+                ok(true),
+                join(ok(ok(true))));
         assertEquals(
-                error(expected),
-                join(value(error(expected))));
+                err(expected),
+                join(ok(err(expected))));
         assertEquals(
-                error(expected),
-                join(error(expected)));
+                err(expected),
+                join(err(expected)));
+    }
+
+    @Test
+    public void iteratorTest()
+    {
+        Iterator<Boolean> iter = ok(true).iterator();
+        assertTrue(iter.next());
+        assertFalse(iter.hasNext());
+        assertFalse(err(unexpected).iterator().hasNext());
+        assertThrows(NoSuchElementException.class, iter::next);
+        assertThrows(NoSuchElementException.class, err(unexpected).iterator()::next);
     }
 
     @Test
     public void equalsTest()
     {
-        assertEquals(value(true), value(true));
-        assertNotEquals(value(true), value(false));
-        assertNotEquals(value(true), error(unexpected));
+        assertEquals(ok(true), ok(true));
+        assertNotEquals(ok(true), ok(false));
+        assertNotEquals(ok(true), err(unexpected));
 
-        assertEquals(error(expected), error(expected));
-        assertNotEquals(error(expected), error(unexpected));
+        assertEquals(err(expected), err(expected));
+        assertNotEquals(err(expected), err(unexpected));
 
-        assertNotEquals(value(true), Either.right(true));
+        assertNotEquals(ok(true), Either.right(true));
     }
     @Test
     public void hashCodeTest()
     {
-        assertEquals(value(true).hashCode(), value(true).hashCode());
-        assertNotEquals(value(true).hashCode(), value(false).hashCode());
-        assertNotEquals(value(true).hashCode(), error(unexpected).hashCode());
+        assertEquals(ok(true).hashCode(), ok(true).hashCode());
+        assertNotEquals(ok(true).hashCode(), ok(false).hashCode());
+        assertNotEquals(ok(true).hashCode(), err(unexpected).hashCode());
 
-        assertEquals(error(expected).hashCode(), error(expected).hashCode());
-        assertNotEquals(error(expected).hashCode(), error(unexpected).hashCode());
+        assertEquals(err(expected).hashCode(), err(expected).hashCode());
+        assertNotEquals(err(expected).hashCode(), err(unexpected).hashCode());
 
-        assertNotEquals(value(true).hashCode(), Either.right(true).hashCode());
+        assertNotEquals(ok(true).hashCode(), Either.right(true).hashCode());
     }
 
 
@@ -509,7 +479,7 @@ public class ResultTest
     public void toStringTest()
     {
         Double value = 2.0;
-        assertThat(error(expected).toString(), containsString(expected.toString()));
-        assertThat(value(value).toString(), containsString(value.toString()));
+        assertThat(err(expected).toString(), containsString(expected.toString()));
+        assertThat(ok(value).toString(), containsString(value.toString()));
     }
 }

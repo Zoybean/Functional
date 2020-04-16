@@ -17,14 +17,15 @@
 
 package functional.algebraic;
 
+import functional.algebraic.testutils.TestUtils;
 import functional.combinator.Combinators;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static functional.algebraic.Either.left;
 import static functional.algebraic.Either.right;
+import static functional.algebraic.testutils.TestUtils.*;
 import static functional.combinator.Combinators.toss;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
@@ -32,14 +33,28 @@ import static org.junit.Assert.*;
 public class EitherTest
 {
 
-    public static Error error = new AssertionError("Wrong branch taken");
-    public static IOException expected = new IOException("This is the right branch");
+    public static Error             error    = new AssertionError("Wrong branch taken");
+    public static ExpectedException expected = new ExpectedException();
 
     @Test
     public void bimapTest()
     {
         assertEquals(left(0).bimap(l -> l == 0, r -> false), left(true));
         assertEquals(right(0).bimap(l -> false, r -> r == 0), right(true));
+    }
+
+    @Test
+    public void mapLeftTest()
+    {
+        assertEquals(left(0).mapLeft(l -> l == 0), left(true));
+        assertEquals(right(0).mapLeft(l -> false), right(0));
+    }
+
+    @Test
+    public void mapRightTest()
+    {
+        assertEquals(left(0).mapRight(r -> false), left(0));
+        assertEquals(right(0).mapRight(r -> r == 0), right(true));
     }
 
     @Test
@@ -65,18 +80,63 @@ public class EitherTest
     }
 
     @Test
+    public void leftOrTest()
+    {
+        assertTrue(left(true).leftOr(false));
+        assertFalse((Boolean) right(true).leftOr(false));
+    }
+
+    @Test
+    public void rightOrTest()
+    {
+        assertFalse((Boolean) left(true).rightOr(false));
+        assertTrue(right(true).rightOr(false));
+    }
+    @Test
+    public void leftOrElseTest()
+    {
+        assertTrue(left(true).leftOrElse(() -> false));
+        assertFalse((Boolean) right(true).leftOrElse(() -> false));
+    }
+
+    @Test
+    public void rightOrElseTest()
+    {
+        assertFalse((Boolean) left(true).rightOrElse(() -> false));
+        assertTrue(right(true).rightOrElse(() -> false));
+    }
+
+
+    @Test
+    public void leftAndThenTest()
+    {
+        assertEquals(left(true), left(0).leftAndThen(l -> left(l == 0)));
+        assertEquals(right(true), left(0).leftAndThen(l -> right(l == 0)));
+        assertEquals(right(true), right(true).leftAndThen(l -> left(false)));
+    }
+
+    @Test
+    public void rightAndThenTest()
+    {
+        assertEquals(right(true), right(0).rightAndThen(r -> right(r == 0)));
+        assertEquals(left(true), right(0).rightAndThen(r -> left(r == 0)));
+        assertEquals(left(true), left(true).rightAndThen(r -> right(false)));
+    }
+
+    @Test
     public void fromLeftTest()
     {
-        assertTrue(left(true).fromLeft(false));
-        assertFalse((Boolean) right(true).fromLeft(false));
+        assertEquals(Option.some(true), left(true).fromLeft());
+        assertEquals(Option.none(), right(true).fromLeft());
     }
 
     @Test
     public void fromRightTest()
     {
-        assertFalse((Boolean) left(true).fromRight(false));
-        assertTrue(right(true).fromRight(false));
+        assertEquals(Option.some(true), right(true).fromRight());
+        assertEquals(Option.none(), left(true).fromRight());
     }
+
 
     @Test
     public void ifLeftTestLeft()
@@ -176,12 +236,14 @@ public class EitherTest
         ));
     }
 
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestProducingLeftError() throws IOException
+    @Test
+    public void unsafeMatchTestProducingLeftError()
     {
-        left(0).<Integer, IOException>unsafeMatchThen(
-                l -> toss(expected),
-                r -> toss(error));
+        assertThrows(
+                ExpectedException.class,
+                () -> left(0).<Integer, ExpectedException>unsafeMatchThen(
+                        l -> toss(expected),
+                        r -> toss(error)));
     }
 
     @Test
@@ -189,21 +251,20 @@ public class EitherTest
     {
         assertTrue(right(0).unsafeMatchThen(
                 l -> toss(error),
-                r -> r == 0
-        ));
-    }
-
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestProducingRightError() throws IOException
-    {
-        right(0).<Integer, IOException>unsafeMatchThen(
-                l -> toss(error),
-                r -> toss(expected)
-        );
+                r -> r == 0));
     }
 
     @Test
-    public void unsafeMatchTestVoidLeft() throws IOException
+    public void unsafeMatchTestProducingRightError()
+    {
+        assertThrows(ExpectedException.class,
+                     () -> right(0).<Integer, ExpectedException>unsafeMatchThen(
+                             l -> toss(error),
+                             r -> toss(expected)));
+    }
+
+    @Test
+    public void unsafeMatchTestVoidLeft()
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
 
@@ -215,12 +276,14 @@ public class EitherTest
         assertTrue(changed.get());
     }
    
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestVoidLeftError() throws IOException
+    @Test
+    public void unsafeMatchTestVoidLeftError()
     {
-        left(0).<Integer, IOException>unsafeMatchThen(
-                l -> toss(expected),
-                r -> toss(error));
+        assertThrows(
+                ExpectedException.class,
+                () -> left(0).<Integer, ExpectedException>unsafeMatchThen(
+                        l -> toss(expected),
+                        r -> toss(error)));
     }
 
     @Test
@@ -235,12 +298,14 @@ public class EitherTest
         assertTrue(changed.get());
     }
 
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestVoidRightError() throws IOException
+    @Test
+    public void unsafeMatchTestVoidRightError()
     {
-        right(0).<Integer, IOException>unsafeMatchThen(
-                l -> toss(error),
-                r -> toss(expected));
+        assertThrows(
+                ExpectedException.class,
+                () -> right(0).<Integer, ExpectedException>unsafeMatchThen(
+                        l -> toss(error),
+                        r -> toss(expected)));
     }
 
     @Test
@@ -248,17 +313,17 @@ public class EitherTest
     {
         assertEquals(
                 ((Integer)1).toString(),
-                left(1).collapseThen(Object::toString));
+                Either.collapseThen(left(1), Object::toString));
         assertEquals(
                 ((Boolean)false).toString(),
-                right(false).collapseThen(Object::toString));
+                Either.collapseThen(right(false), Object::toString));
     }
 
     @Test
     public void collapseTest()
     {
-        left(1).collapse(o -> assertEquals(1, o));
-        right(true).collapse(o -> assertEquals(true, o));
+        Either.collapse(left(1), o -> assertEquals(1, (int) o));
+        Either.collapse(right(true), o -> assertEquals(true, o));
     }
 
     @Test

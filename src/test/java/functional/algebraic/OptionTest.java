@@ -24,6 +24,8 @@ import functional.throwing.ThrowingSupplier;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -31,72 +33,57 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static functional.algebraic.Option.*;
+import static functional.algebraic.testutils.TestUtils.*;
 import static functional.combinator.Combinators.toss;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class OptionTest
 {
-    public static Error error = new AssertionError("Wrong branch taken");
-    public static IOException expected = new IOException("This is the right branch");
+    public static Error             error    = new AssertionError("Wrong branch taken");
+    public static ExpectedException expected = new ExpectedException();
 
     @Test
-    public void bindTestJust()
+    public void andThenTestSome()
     {
-        int                                x = 0;
-        Function<Integer, Option<Integer>> f = i -> just(i + 1);
+        int x = 0;
+        Function<Integer, Option<Integer>> f = i -> some(i + 1);
 
-        assertEquals(f.apply(x), just(x).andThen(f));
-        assertTrue(just(x).andThen(f).isJust());
+        assertEquals(f.apply(x), some(x).andThen(f));
+        assertTrue(some(x).andThen(f).isSome());
     }
 
     @Test
-    public void bindTestJustNothing()
+    public void andThenTestSomeNone()
     {
-        int                              x = 0;
-        Function<Object, Option<Object>> f = i -> nothing();
+        int x = 0;
+        Function<Object, Option<Object>> f = i -> none();
 
-        assertEquals(f.apply(x), just(x).andThen(f));
-        assertEquals(nothing(), just(x).andThen(f));
+        assertEquals(f.apply(x), some(x).andThen(f));
+        assertEquals(none(), some(x).andThen(f));
     }
 
     @Test
-    public void bindTestNothing()
+    public void andThenTestNone()
     {
-        Function<Integer, Option<Integer>> g = i -> just(i + 1);
+        Function<Integer, Option<Integer>> g = i -> some(i + 1);
 
-        Option<Integer> nothing = Option.nothing();
-        assertEquals(nothing(), nothing.andThen(g));
+        Option<Integer> none = Option.none();
+        assertEquals(none(), none.andThen(g));
     }
 
     @Test
-    public void fromMaybeTest()
+    public void unwrapTest()
     {
-        assertTrue(Option.<Boolean>just(true).orElse(false));
-        assertFalse(Option.<Boolean>nothing().orElse(false));
+        assertTrue(some(true).unwrap());
+        assertThrows(NoSuchElementException.class, none()::unwrap);
     }
 
     @Test
-    public void getTestJust()
+    public void unwrapOrTest()
     {
-        assertTrue(just(true).get());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void getTestNothing()
-    {
-        nothing().get();
-    }
-
-    @Test
-    public void orElseTest()
-    {
-        assertEquals(
-                true,
-                just(true).orElse(false));
-        assertEquals(
-                false,
-                nothing().orElse(false));
+        assertTrue(Option.<Boolean>some(true).unwrapOr(false));
+        assertFalse(Option.<Boolean>none().unwrapOr(false));
     }
 
     @Test
@@ -104,17 +91,35 @@ public class OptionTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
 
-        just(true).consume(v -> changed.set(v));
-        nothing().consume(v -> toss(error));
+        some(true).consume(v -> changed.set(v));
+        none().consume(v -> toss(error));
 
         assertTrue(changed.get());
     }
 
     @Test
-    public void isJustTest()
+    public void isSomeTest()
     {
-        assertTrue(just(0).isJust());
-        assertFalse(nothing().isJust());
+        assertTrue(some(0).isSome());
+        assertFalse(none().isSome());
+    }
+
+    @Test
+    public void isNoneTest()
+    {
+        assertTrue(none().isNone());
+        assertFalse(some(0).isNone());
+    }
+
+    @Test
+    public void iteratorTest()
+    {
+        Iterator<Boolean> iter = some(true).iterator();
+        assertTrue(iter.next());
+        assertFalse(iter.hasNext());
+        assertFalse(none().iterator().hasNext());
+        assertThrows(NoSuchElementException.class, iter::next);
+        assertThrows(NoSuchElementException.class, none().iterator()::next);
     }
 
     @Test
@@ -122,179 +127,303 @@ public class OptionTest
     {
         Function<Integer, Integer> f = x -> x + 1;
 
-        int             x       = 0;
-        Option<Integer> nothing = nothing();
+        int x = 0;
+        Option<Integer> none = none();
 
         assertEquals(
-                just(f.apply(x)),
-                just(x).map(f));
+                some(f.apply(x)),
+                some(x).map(f));
 
         assertEquals(
-                nothing,
-                nothing.map(f));
+                none,
+                none.map(f));
     }
 
     @Test
-    public void matchTestProducingJust()
+    public void andTest()
+    {
+        assertEquals(
+                some(0),
+                some(1).and(some(0)));
+
+        assertEquals(
+                none(),
+                none().and(some(0)));
+        assertEquals(
+                none(),
+                some(0).and(none()));
+        assertEquals(
+                none(),
+                none().and(none()));
+    }
+    @Test
+    public void orTest()
+    {
+        assertEquals(
+                some(1),
+                some(1).or(some(0)));
+        assertEquals(
+                some(0),
+                none().or(some(0)));
+        assertEquals(
+                some(0),
+                some(0).or(none()));
+
+        assertEquals(
+                none(),
+                none().or(none()));
+    }
+    @Test
+    public void xorTest()
+    {
+        assertEquals(
+                none(),
+                some(1).xor(some(0)));
+        assertEquals(
+                some(0),
+                none().xor(some(0)));
+        assertEquals(
+                some(0),
+                some(0).xor(none()));
+
+        assertEquals(
+                none(),
+                none().xor(none()));
+    }
+
+    @Test
+    public void filterTest()
+    {
+        Option<Integer> none = none();
+        assertEquals(
+                some(0),
+                some(0).filter(v -> v == 0));
+
+        assertEquals(
+                none(),
+                none.filter(v -> v == 0));
+        assertEquals(
+                none(),
+                some(1).filter(v -> v == 0));
+        assertEquals(
+                none(),
+                none.filter(v -> v == 0));
+    }
+
+    @Test
+    public void orElseTest()
+    {
+        assertEquals(
+                some(1),
+                some(1).orElse(() -> some(0)));
+        assertEquals(
+                some(0),
+                none().orElse(() -> some(0)));
+        assertEquals(
+                some(0),
+                some(0).orElse(() -> none()));
+        assertEquals(
+                none(),
+                none().orElse(() -> none()));
+    }
+
+    @Test
+    public void mapOrTest()
+    {
+        Function<Integer, Integer> increment = i -> i + 1;
+        Option<Integer> none = none();
+
+        assertEquals(
+                2,
+                (int) some(1).mapOr(increment, 0));
+        assertEquals(
+                0,
+                (int) none.mapOr(increment, 0));
+    }
+
+    @Test
+    public void mapOrElseTest()
+    {
+        Function<Integer, Integer> increment = i -> i + 1;
+        Option<Integer> none = none();
+
+        assertEquals(
+                2,
+                (int) some(1).mapOrElse(increment, () -> 0));
+        assertEquals(
+                0,
+                (int) none.mapOrElse(increment, () -> 0));
+    }
+
+    @Test
+    public void matchThenTestSome()
     {
         Function<Integer, Boolean> some= i -> true;
         Supplier<Boolean> none = () -> false;
 
-        assertTrue(just(0).matchThen(some, none));
+        assertTrue(some(0).matchThen(some, none));
     }
 
     @Test
-    public void matchTestProducingNothing()
+    public void matchThenTestNone()
     {
-        Function<Integer, Boolean> some= i -> true;
-        Supplier<Boolean> none    = () -> false;
-        Option<Integer>   nothing = nothing();
+        Function<Integer, Boolean> s = i -> true;
+        Supplier<Boolean> n = () -> false;
+        Option<Integer> none = none();
 
-        assertFalse(nothing.matchThen(some, none));
+        assertFalse(none.matchThen(s, n));
     }
 
     @Test
-    public void matchTestVoidJust()
+    public void matchTestSome()
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        Consumer<Boolean> some = changed::set;
-        Runnable none = () -> toss(error);
+        Consumer<Boolean> s = changed::set;
+        Runnable n = () -> toss(error);
 
-        just(true).match(some, none);
+        some(true).match(s, n);
         assertTrue(changed.get());
     }
 
     @Test
-    public void matchTestVoidNothing()
+    public void matchTestNone()
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        Consumer<Integer> some = i -> toss(error);
-        Runnable        none    = () -> changed.set(true);
-        Option<Integer> nothing = nothing();
+        Consumer<Integer> s = i -> toss(error);
+        Runnable n = () -> changed.set(true);
+        Option<Integer> none = none();
 
-        nothing.match(some, none);
+        none.match(s, n);
         assertTrue(changed.get());
     }
 
     @Test
     public void ofTestNullable()
     {
-        assertEquals(nothing(), Option.of((Integer)null));
-        assertEquals(just(0), Option.of(0));
+        assertEquals(none(), Option.of((Integer)null));
+        assertEquals(some(0), Option.of(0));
     }
 
     @Test
     public void ofTestOptional()
     {
-        assertEquals(nothing(), Option.of(Optional.empty()));
-        assertEquals(just(0), Option.of(Optional.of(0)));
+        assertEquals(none(), Option.of(Optional.empty()));
+        assertEquals(some(0), Option.of(Optional.of(0)));
     }
 
     @Test
-    public void unsafeMatchTestProducingJust() throws IOException
+    public void unsafeMatchThenTestSome() throws IOException
     {
         ThrowingFunction<Integer, Boolean, IOException> some = i -> true;
         ThrowingSupplier<Boolean, IOException> none = () -> toss(error);
 
-        assertTrue(just(0).unsafeMatchThen(some, none));
-    }
-
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestProducingJustError() throws IOException
-    {
-        ThrowingFunction<Integer, ?, IOException> some = i -> toss(expected);
-        ThrowingSupplier<?, IOException> none = () -> toss(error);
-
-        just(0).unsafeMatchThen(some, none);
+        assertTrue(some(0).unsafeMatchThen(some, none));
     }
 
     @Test
-    public void unsafeMatchTestProducingNothing() throws IOException
+    public void unsafeMatchThenTestSomeError()
     {
-        ThrowingFunction<Integer, Boolean, IOException> some= i -> toss(error);
-        ThrowingSupplier<Boolean, IOException> none    = () -> false;
-        Option<Integer>                        nothing = nothing();
+        ThrowingFunction<Integer, ?, ExpectedException> some = i -> toss(expected);
+        ThrowingSupplier<?, ExpectedException> none = () -> toss(error);
 
-        assertFalse(nothing.unsafeMatchThen(some, none));
-    }
-
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestProducingNothingError() throws IOException
-    {
-        ThrowingFunction<Integer, ?, IOException> some = i -> toss(error);
-        ThrowingSupplier<?, IOException> none    = () -> toss(expected);
-        Option<Integer>                  nothing = nothing();
-
-        nothing.unsafeMatchThen(some, none);
+        assertThrows(
+                ExpectedException.class,
+                () -> some(0).unsafeMatchThen(some, none));
     }
 
     @Test
-    public void unsafeMatchTestVoidJust() throws IOException
+    public void unsafeMatchThenTestNone() throws IOException
+    {
+        ThrowingFunction<Integer, Boolean, IOException> s= i -> toss(error);
+        ThrowingSupplier<Boolean, IOException> n = () -> false;
+        Option<Integer> none = none();
+
+        assertFalse(none.unsafeMatchThen(s, n));
+    }
+
+    @Test
+    public void unsafeMatchThenTestNoneError()
+    {
+        ThrowingFunction<Integer, ?, ExpectedException> s = i -> toss(error);
+        ThrowingSupplier<?, ExpectedException> n = () -> toss(expected);
+        Option<Integer> none = none();
+
+        assertThrows(
+                ExpectedException.class,
+                () -> none.unsafeMatchThen(s, n));
+    }
+
+    @Test
+    public void unsafeMatchTestSome() throws IOException
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        ThrowingConsumer<Boolean, IOException> some = b -> changed.set(b);
-        ThrowingRunnable<IOException> none = () -> toss(error);
+        ThrowingConsumer<Boolean, IOException> s = b -> changed.set(b);
+        ThrowingRunnable<IOException> n = () -> toss(error);
 
-        just(true).unsafeMatch(some, none);
+        some(true).unsafeMatch(s, n);
         assertTrue(changed.get());
     }
 
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestVoidJustError() throws IOException
+    @Test
+    public void unsafeMatchTestSomeError()
     {
-        ThrowingConsumer<Integer, IOException> some = i -> toss(expected);
-        ThrowingRunnable<IOException> none = () -> toss(error);
+        ThrowingConsumer<Integer, ExpectedException> s = i -> toss(expected);
+        ThrowingRunnable<ExpectedException> n = () -> toss(error);
 
-        just(0).unsafeMatch(some, none);
+        assertThrows(
+                ExpectedException.class,
+                () -> some(0).unsafeMatch(s, n));
     }
 
     @Test
-    public void unsafeMatchTestVoidNothing() throws IOException
+    public void unsafeMatchTestNone() throws IOException
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
-        ThrowingConsumer<Integer, IOException> some = i -> toss(error);
-        ThrowingRunnable<IOException> none    = () -> changed.set(true);
-        Option<Integer>               nothing = nothing();
+        ThrowingConsumer<Integer, IOException> s = i -> toss(error);
+        ThrowingRunnable<IOException> n = () -> changed.set(true);
+        Option<Integer> none = none();
 
-        nothing.unsafeMatch(some, none);
+        none.unsafeMatch(s, n);
         assertTrue(changed.get());
     }
 
-    @Test(expected = IOException.class)
-    public void unsafeMatchTestVoidNothingError() throws IOException
+    @Test
+    public void unsafeMatchTestNoneError()
     {
-        ThrowingConsumer<Integer, IOException> some = i -> toss(error);
-        ThrowingRunnable<IOException> none    = () -> toss(expected);
-        Option<Integer>               nothing = nothing();
+        ThrowingConsumer<Integer, ExpectedException> s = i -> toss(error);
+        ThrowingRunnable<ExpectedException> n = () -> toss(expected);
+        Option<Integer> none = none();
 
-        nothing.unsafeMatch(some, none);
+        assertThrows(
+                ExpectedException.class,
+                () -> none.unsafeMatch(s, n));
     }
 
     @Test
     public void hashCodeTest()
     {
-        assertEquals(just(0).hashCode(), just(0).hashCode());
-        assertEquals(nothing().hashCode(), nothing().hashCode());
-        assertNotEquals(just(0).hashCode(), nothing().hashCode());
-        assertNotEquals(nothing().hashCode(), just(0).hashCode());
-        assertNotEquals(just(0).hashCode(), just(1).hashCode());
+        assertEquals(some(0).hashCode(), some(0).hashCode());
+        assertEquals(none().hashCode(), none().hashCode());
+        assertNotEquals(some(0).hashCode(), none().hashCode());
+        assertNotEquals(none().hashCode(), some(0).hashCode());
+        assertNotEquals(some(0).hashCode(), some(1).hashCode());
     }
 
     @Test
     public void equalsTest()
     {
-        assertEquals(just(0), just(0));
-        assertEquals(nothing(), nothing());
-        assertNotEquals(just(0), nothing());
-        assertNotEquals(nothing(), just(0));
-        assertNotEquals(just(0), just(1));
+        assertEquals(some(0), some(0));
+        assertEquals(none(), none());
+        assertNotEquals(some(0), none());
+        assertNotEquals(none(), some(0));
+        assertNotEquals(some(0), some(1));
     }
 
     @Test
     public void toStringTest()
     {
         String value = "hello";
-        assertThat(Option.just(value).toString(), containsString(value.toString()));
-        Option.nothing().toString(); //ensure no exception is thrown
+        assertThat(Option.some(value).toString(), containsString(value.toString()));
+        Option.none().toString(); //ensure no exception is thrown
     }
 }
