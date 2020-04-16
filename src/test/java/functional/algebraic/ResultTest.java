@@ -21,7 +21,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static functional.algebraic.Result.*;
@@ -447,14 +446,14 @@ public class ResultTest
     @Test
     public void transposeTest()
     {
-        Maybe<Result<Boolean, Exception>> n = Maybe.nothing();
-        Result<Maybe<Boolean>, Exception> vn = value(Maybe.nothing());
+        Option<Result<Boolean, Exception>> n  = Option.nothing();
+        Result<Option<Boolean>, Exception> vn = value(Option.nothing());
 
-        Maybe<Result<Boolean, Exception>> jv = Maybe.just(value(true));
-        Result<Maybe<Boolean>, Exception> vj = value(Maybe.just(true));
+        Option<Result<Boolean, Exception>> jv = Option.just(value(true));
+        Result<Option<Boolean>, Exception> vj = value(Option.just(true));
 
-        Maybe<Result<Boolean, Exception>> je = Maybe.just(error(expected));
-        Result<Maybe<Boolean>, Exception> e = error(expected);
+        Option<Result<Boolean, Exception>> je = Option.just(error(expected));
+        Result<Option<Boolean>, Exception> e  = error(expected);
 
         assertEquals(n, transpose(vn));
         assertEquals(n, transpose(transpose(n)));

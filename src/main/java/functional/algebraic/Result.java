@@ -211,14 +211,15 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <V> The value alternative type.
      * @return
      */
-    public static <V, E extends Exception> Result<Maybe<V>, E> transpose(Maybe<? extends Result<? extends V, ? extends E>> m)
+    public static <V, E extends Exception> Result<Option<V>, E> transpose(
+            Option<? extends Result<? extends V, ? extends E>> m)
     {
         return m.matchThen(
                 (Result<? extends V, ? extends E> r) -> r.matchThen(
-                        (V v) -> value(Maybe.just(v)),
+                        (V v) -> value(Option.just(v)),
                         (E e) -> error(e)
                 ),
-                () -> value(Maybe.nothing())
+                () -> value(Option.nothing())
         );
     }
 
@@ -229,14 +230,14 @@ public class Result<V, E extends Exception> implements ThrowingSupplier<V, E>
      * @param <V> The value alternative type.
      * @return
      */
-    public static <V, E extends Exception> Maybe<Result<V, E>> transpose(Result<? extends Maybe<? extends V>, ? extends E> r)
+    public static <V, E extends Exception> Option<Result<V, E>> transpose(Result<? extends Option<? extends V>, ? extends E> r)
     {
         return r.matchThen(
-                (Maybe<? extends V> m) -> m.matchThen(
-                        (V v) -> Maybe.just(value(v)),
-                        () -> Maybe.nothing()
+                (Option<? extends V> m) -> m.matchThen(
+                        (V v) -> Option.just(value(v)),
+                        () -> Option.nothing()
                 ),
-                (E e) -> Maybe.just(error(e))
+                (E e) -> Option.just(error(e))
         );
     }
 

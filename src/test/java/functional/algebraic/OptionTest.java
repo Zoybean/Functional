@@ -30,12 +30,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static functional.algebraic.Maybe.*;
+import static functional.algebraic.Option.*;
 import static functional.combinator.Combinators.toss;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
-public class MaybeTest
+public class OptionTest
 {
     public static Error error = new AssertionError("Wrong branch taken");
     public static IOException expected = new IOException("This is the right branch");
@@ -43,8 +43,8 @@ public class MaybeTest
     @Test
     public void bindTestJust()
     {
-        int x = 0;
-        Function<Integer, Maybe<Integer>> f = i -> just(i + 1);
+        int                                x = 0;
+        Function<Integer, Option<Integer>> f = i -> just(i + 1);
 
         assertEquals(f.apply(x), just(x).andThen(f));
         assertTrue(just(x).andThen(f).isJust());
@@ -53,8 +53,8 @@ public class MaybeTest
     @Test
     public void bindTestJustNothing()
     {
-        int x = 0;
-        Function<Object, Maybe<Object>> f = i -> nothing();
+        int                              x = 0;
+        Function<Object, Option<Object>> f = i -> nothing();
 
         assertEquals(f.apply(x), just(x).andThen(f));
         assertEquals(nothing(), just(x).andThen(f));
@@ -63,17 +63,17 @@ public class MaybeTest
     @Test
     public void bindTestNothing()
     {
-        Function<Integer, Maybe<Integer>> g = i -> just(i + 1);
+        Function<Integer, Option<Integer>> g = i -> just(i + 1);
 
-        Maybe<Integer> nothing = Maybe.nothing();
+        Option<Integer> nothing = Option.nothing();
         assertEquals(nothing(), nothing.andThen(g));
     }
 
     @Test
     public void fromMaybeTest()
     {
-        assertTrue(Maybe.<Boolean>just(true).orElse(false));
-        assertFalse(Maybe.<Boolean>nothing().orElse(false));
+        assertTrue(Option.<Boolean>just(true).orElse(false));
+        assertFalse(Option.<Boolean>nothing().orElse(false));
     }
 
     @Test
@@ -122,8 +122,8 @@ public class MaybeTest
     {
         Function<Integer, Integer> f = x -> x + 1;
 
-        int x = 0;
-        Maybe<Integer> nothing = nothing();
+        int             x       = 0;
+        Option<Integer> nothing = nothing();
 
         assertEquals(
                 just(f.apply(x)),
@@ -147,8 +147,8 @@ public class MaybeTest
     public void matchTestProducingNothing()
     {
         Function<Integer, Boolean> some= i -> true;
-        Supplier<Boolean> none = () -> false;
-        Maybe<Integer> nothing = nothing();
+        Supplier<Boolean> none    = () -> false;
+        Option<Integer>   nothing = nothing();
 
         assertFalse(nothing.matchThen(some, none));
     }
@@ -169,8 +169,8 @@ public class MaybeTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
         Consumer<Integer> some = i -> toss(error);
-        Runnable none = () -> changed.set(true);
-        Maybe<Integer> nothing = nothing();
+        Runnable        none    = () -> changed.set(true);
+        Option<Integer> nothing = nothing();
 
         nothing.match(some, none);
         assertTrue(changed.get());
@@ -179,15 +179,15 @@ public class MaybeTest
     @Test
     public void ofTestNullable()
     {
-        assertEquals(nothing(), Maybe.of((Integer)null));
-        assertEquals(just(0), Maybe.of(0));
+        assertEquals(nothing(), Option.of((Integer)null));
+        assertEquals(just(0), Option.of(0));
     }
 
     @Test
     public void ofTestOptional()
     {
-        assertEquals(nothing(), Maybe.of(Optional.empty()));
-        assertEquals(just(0), Maybe.of(Optional.of(0)));
+        assertEquals(nothing(), Option.of(Optional.empty()));
+        assertEquals(just(0), Option.of(Optional.of(0)));
     }
 
     @Test
@@ -212,8 +212,8 @@ public class MaybeTest
     public void unsafeMatchTestProducingNothing() throws IOException
     {
         ThrowingFunction<Integer, Boolean, IOException> some= i -> toss(error);
-        ThrowingSupplier<Boolean, IOException> none = () -> false;
-        Maybe<Integer> nothing = nothing();
+        ThrowingSupplier<Boolean, IOException> none    = () -> false;
+        Option<Integer>                        nothing = nothing();
 
         assertFalse(nothing.unsafeMatchThen(some, none));
     }
@@ -222,8 +222,8 @@ public class MaybeTest
     public void unsafeMatchTestProducingNothingError() throws IOException
     {
         ThrowingFunction<Integer, ?, IOException> some = i -> toss(error);
-        ThrowingSupplier<?, IOException> none = () -> toss(expected);
-        Maybe<Integer> nothing = nothing();
+        ThrowingSupplier<?, IOException> none    = () -> toss(expected);
+        Option<Integer>                  nothing = nothing();
 
         nothing.unsafeMatchThen(some, none);
     }
@@ -253,8 +253,8 @@ public class MaybeTest
     {
         final AtomicBoolean changed = new AtomicBoolean(false);
         ThrowingConsumer<Integer, IOException> some = i -> toss(error);
-        ThrowingRunnable<IOException> none = () -> changed.set(true);
-        Maybe<Integer> nothing = nothing();
+        ThrowingRunnable<IOException> none    = () -> changed.set(true);
+        Option<Integer>               nothing = nothing();
 
         nothing.unsafeMatch(some, none);
         assertTrue(changed.get());
@@ -264,8 +264,8 @@ public class MaybeTest
     public void unsafeMatchTestVoidNothingError() throws IOException
     {
         ThrowingConsumer<Integer, IOException> some = i -> toss(error);
-        ThrowingRunnable<IOException> none = () -> toss(expected);
-        Maybe<Integer> nothing = nothing();
+        ThrowingRunnable<IOException> none    = () -> toss(expected);
+        Option<Integer>               nothing = nothing();
 
         nothing.unsafeMatch(some, none);
     }
@@ -294,7 +294,7 @@ public class MaybeTest
     public void toStringTest()
     {
         String value = "hello";
-        assertThat(Maybe.just(value).toString(), containsString(value.toString()));
-        Maybe.nothing().toString(); //ensure no exception is thrown
+        assertThat(Option.just(value).toString(), containsString(value.toString()));
+        Option.nothing().toString(); //ensure no exception is thrown
     }
 }

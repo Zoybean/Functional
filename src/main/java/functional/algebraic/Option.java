@@ -65,7 +65,7 @@ import java.util.function.Supplier;
  * @author Zoey Hewll
  * @author Eleanor McMurtry
  */
-public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateException>
+public abstract class Option<V> implements ThrowingSupplier<V, IllegalStateException>
 {
     /**
      * Effectively final, singleton instance.
@@ -75,7 +75,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
     /**
      * Private constructor to seal the type.
      */
-    private Maybe() {}
+    private Option() {}
 
     /**
      * Decide control flow based on the structure of the Maybe,
@@ -142,7 +142,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <T> the type of the function's return value
      * @return the modified Maybe
      */
-    public abstract <T> Maybe<T> map(Function<? super V, ? extends T> f);
+    public abstract <T> Option<T> map(Function<? super V, ? extends T> f);
 
     /**
      * Performs the operation on any contained value and returns the resulting Maybe if there is one.
@@ -152,7 +152,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <T> the type of the function's optional return value
      * @return the modified Maybe
      */
-    public abstract <T> Maybe<T> andThen(Function<? super V, ? extends Maybe<? extends T>> f);
+    public abstract <T> Option<T> andThen(Function<? super V, ? extends Option<? extends T>> f);
 
     /**
      * Returns the contained value, if it exists, otherwise raise an exception.
@@ -216,7 +216,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @return nothing() if the value is null, and just(value) otherwise
      * @param <V> The type of the optional value
      */
-    public static <V> Maybe<V> of(@Nullable V value)
+    public static <V> Option<V> of(@Nullable V value)
     {
         return value == null
                 ? nothing()
@@ -230,9 +230,9 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @return A Maybe mirroring the Optional parameter
      * @param <V> The type of the optional value
      */
-    public static <V> Maybe<V> of(Optional<? extends V> value)
+    public static <V> Option<V> of(Optional<? extends V> value)
     {
-        return cast(value.map(Maybe::just).orElse(nothing()));
+        return cast(value.map(Option::just).orElse(nothing()));
     }
 
     /**
@@ -242,7 +242,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <V>   The type of the containted value
      * @return The value wrapped in a Maybe
      */
-    public static <V> Maybe<V> just(V value)
+    public static <V> Option<V> just(V value)
     {
         return new Just<>(value);
     }
@@ -253,7 +253,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <V> The type of the non-existent contained value
      * @return The singleton Nothing instance
      */
-    public static <V> Maybe<V> nothing()
+    public static <V> Option<V> nothing()
     {
         if (NOTHING == null)
         {
@@ -270,11 +270,11 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      * @param <V> The type to cast to
      * @return A Maybe of the upcast type
      */
-    static <V> Maybe<V> cast(Maybe<? extends V> m)
+    static <V> Option<V> cast(Option<? extends V> m)
     {
         return m.matchThen(
-                Maybe::just,
-                Maybe::nothing
+                Option::just,
+                Option::nothing
         );
     }
 
@@ -291,7 +291,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      *
      * @param <V> unused
      */
-    private static class Nothing<V> extends Maybe<V>
+    private static class Nothing<V> extends Option<V>
     {
         @Override
         public boolean equals(Object o)
@@ -324,13 +324,13 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         }
 
         @Override
-        public <T> Maybe<T> map(Function<? super V, ? extends T> f)
+        public <T> Option<T> map(Function<? super V, ? extends T> f)
         {
             return nothing();
         }
 
         @Override
-        public <T> Maybe<T> andThen(Function<? super V, ? extends Maybe<? extends T>> f)
+        public <T> Option<T> andThen(Function<? super V, ? extends Option<? extends T>> f)
         {
             return nothing();
         }
@@ -347,7 +347,7 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
      *
      * @param <V> The type of the contained value.
      */
-    private static class Just<V> extends Maybe<V>
+    private static class Just<V> extends Option<V>
     {
         /**
          * The contained value.
@@ -400,13 +400,13 @@ public abstract class Maybe<V> implements ThrowingSupplier<V, IllegalStateExcept
         }
 
         @Override
-        public <T> Maybe<T> map(Function<? super V, ? extends T> f)
+        public <T> Option<T> map(Function<? super V, ? extends T> f)
         {
             return just(f.apply(value));
         }
 
         @Override
-        public <T> Maybe<T> andThen(Function<? super V, ? extends Maybe<? extends T>> f)
+        public <T> Option<T> andThen(Function<? super V, ? extends Option<? extends T>> f)
         {
             return cast(f.apply(value));
         }
