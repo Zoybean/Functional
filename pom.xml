@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.zoybean</groupId>
     <artifactId>functional</artifactId>
-    <version>0.2.2-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
     <name>io.github.zoybean:functional</name>
     <description>A library of utilities to enable functional programming in Java</description>
     <url>https://github.com/Zoybean/Functional/</url>
