@@ -1,3 +1,6 @@
+# Note:
+This repo is no longer being actively maintained, and it is unlikely that I will pick it up again.
+
 # Functional
 A library of utilities to enable functional programming in Java.
 
